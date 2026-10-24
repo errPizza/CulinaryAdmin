@@ -1,0 +1,31 @@
+{
+  "name": "culinary-admin",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5180 --strictPort",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 5180 --strictPort",
+    "tauri": "tauri",
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "@fontsource-variable/manrope": "5.2.8",
+    "@fontsource/jetbrains-mono": "5.2.8",
+    "lucide-react": "0.511.0",
+    "qrcode": "1.5.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.0",
+    "@tauri-apps/cli": "2.8.4",
+    "@types/qrcode": "1.5.5",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
+    "@vitejs/plugin-react": "4.6.0",
+    "typescript": "5.9.3",
+    "vite": "7.1.5"
+  }
+}

@@ -1,0 +1,23 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Tablero de salidas</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}body{width:1440px;height:900px;overflow:hidden;font:14px/1.4 Barlow,sans-serif;background:#1b1c1e;color:#e8e8e8;display:grid;grid-template-columns:220px 1fr}
+nav{background:#111;padding:22px 14px;display:flex;flex-direction:column;gap:4px}nav b{font:700 18px "Barlow Condensed";margin:0 10px 20px}nav a{padding:9px 12px;border-radius:6px;color:#aab}nav a.on{background:#2a2b2e;color:#fff}
+main{padding:24px 32px}h1{font:700 30px "Barlow Condensed";letter-spacing:.02em;display:flex;justify-content:space-between;margin-bottom:18px}button{background:#e0a526;color:#111;border:0;border-radius:6px;padding:8px 16px;font:600 15px Barlow}
+.board{background:#111;border-radius:10px;padding:8px 0}.row{display:grid;grid-template-columns:160px 1fr 1fr 150px 160px;padding:11px 20px;border-bottom:1px solid #26272a;align-items:center}
+.row.h{font:600 12px Barlow;color:#6b7178;letter-spacing:.08em;text-transform:uppercase}
+.cell{font:600 19px "Barlow Condensed";letter-spacing:.06em;text-transform:uppercase}.cell span{display:inline-block;background:#1f2023;padding:1px 3px;margin-right:2px;border-radius:2px}
+.amber .st{color:#e0a526}.red .cell,.red .st{color:#b8352f}.ok .st{color:#7fbf8f}.st{font:600 15px Barlow}
+</style></head><body>
+<nav><b>CULINARYADMIN</b><a class="on">Licencias</a><a>Versiones</a><a>Soporte</a><a>Sucursales</a><a>Equipo</a><a>Bitácora</a></nav>
+<main><h1>LICENCIAS · POR VENCIMIENTO <button>Nueva licencia</button></h1>
+<div class="board">
+<div class="row h"><span>Vence</span><span>Cliente</span><span>Sucursal</span><span>Plan</span><span>Estado</span></div>
+<div class="row red"><span class="cell">22 OCT</span><span class="cell">Café Ámbar</span><span class="cell">Roma Norte</span><span class="cell">Anual</span><span class="st">Vencida</span></div>
+<div class="row amber"><span class="cell">26 OCT</span><span class="cell">La Plaza</span><span class="cell">Centro</span><span class="cell">Mensual</span><span class="st">2 días</span></div>
+<div class="row amber"><span class="cell">29 OCT</span><span class="cell">Don Beto</span><span class="cell">Coyoacán</span><span class="cell">Prueba</span><span class="st">5 días</span></div>
+<div class="row ok"><span class="cell">18 NOV</span><span class="cell">Cantina La 20</span><span class="cell">Centro</span><span class="cell">Mensual</span><span class="st">Activa</span></div>
+<div class="row ok"><span class="cell">12 JUN 27</span><span class="cell">La Plaza</span><span class="cell">Satélite</span><span class="cell">Anual</span><span class="st">Activa</span></div>
+<div class="row ok"><span class="cell">—</span><span class="cell">Nápoles</span><span class="cell">Polanco</span><span class="cell">Permanente</span><span class="st">Activa</span></div>
+<div class="row"><span class="cell">—</span><span class="cell">El Faro</span><span class="cell">Boca del Río</span><span class="cell">Anual</span><span class="st">Sin activar</span></div>
+</div></main></body></html>

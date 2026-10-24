@@ -1,0 +1,118 @@
+{
+  "title": "Elige el mundo visual de CulinaryAdmin",
+  "question": "El sorteo asignó el tablero de llaves del hotel. Quédate con él, toma una alternativa o vuelve a sortear.",
+  "options": [
+    {
+      "id": "assigned", "kind": "assigned", "kicker": "THE ROLL",
+      "label": "Tablero de llaves",
+      "lineage": "el casillero de llaves de la recepción de un hotel de ciudad",
+      "thesis": "Cada licencia es una llave colgada en su gancho: se ve de un vistazo cuál salió, cuál vuelve y cuál nunca se entregó.",
+      "palette": ["#1f2b2a", "#e9e4d8", "#c8963e", "#3f7d5c", "#b44a3a"],
+      "materials": ["madera oscura del mueble", "latón de las placas", "etiqueta de cartón por plan"],
+      "viewport": "Barra lateral oscura con Licencias, Versiones, Soporte, Sucursales, Equipo y Bitácora; a la derecha, la cuadrícula de ganchos: cada licencia un gancho con su placa (cliente, sucursal, plan) y la etiqueta de color del estado; arriba, filtros y Nueva licencia.",
+      "risk": "Si la placa se vuelve ornamento, la cuadrícula estorba a la tabla; la tabla sigue siendo la vista principal y el gancho solo marca el estado.",
+      "raised": [
+        {"from": "challenger-flap", "raise": "Encabezado de vencimientos ordenado por tiempo: lo que vence pronto sube solo, con su fecha en columnas que no se mueven."},
+        {"from": "challenger-warm", "raise": "El dorado del latón aparece solo donde algo se puede hacer: nunca como decoración."},
+        {"from": "challenger-acetate", "raise": "Cada estado tiene un único rasgo físico: gancho vacío = pendiente, llave fuera = activa, placa tachada = revocada."}
+      ],
+      "html": ".impeccable/mocks/decision/assigned.html"
+    },
+    {
+      "id": "model-pick", "kind": "pick", "kicker": "IMPECCABLE’S PICK",
+      "label": "Protocolo notarial",
+      "lineage": "el libro de protocolo de una notaría mexicana",
+      "thesis": "Cada licencia es una escritura con folio, firma y sello: emitir es dar fe.",
+      "palette": ["#f4f1ea", "#1e2a44", "#7a2e2e", "#5c6b7a"],
+      "materials": ["papel de folio", "sello en tinta", "foliado al margen"],
+      "viewport": "Barra superior con las secciones; tabla de licencias con folio a la izquierda y el sello del estado a la derecha; el panel lateral de la licencia se lee como su escritura.",
+      "risk": "Es la dirección más predecible para algo de licencias y puede sentirse burocrática.",
+      "html": ".impeccable/mocks/decision/model-pick.html"
+    },
+    {
+      "id": "challenger-flap", "kind": "challenger", "catalogId": "signals-instruments-split-flap-concourse",
+      "label": "Tablero de salidas", "verdict": "competitive",
+      "lineage": "tablero de paletas de una terminal",
+      "thesis": "Las licencias como salidas: lo que vence primero encabeza el tablero.",
+      "palette": ["#111111", "#f2f2f2", "#e0a526", "#b8352f", "#6b7178"],
+      "materials": ["paletas negras", "letra blanca condensada", "lámpara ámbar de demora"],
+      "viewport": "Tabla oscura de licencias ordenada por vencimiento, columnas fijas; ámbar para las que vencen en 7 días, rojo tenue para vencidas.",
+      "case": "Gana en claridad del orden por tiempo; pierde en identificación: el proveedor no vive en una terminal.",
+      "risk": "Fondo negro todo el día cansa en oficina.",
+      "hero": "https://impeccable.style/worlds/cards/signals-instruments-split-flap-concourse-hero.webp",
+      "html": ".impeccable/mocks/decision/challenger-flap.html"
+    },
+    {
+      "id": "challenger-warm", "kind": "challenger", "catalogId": "digital-design-canon-warm-consumer-app-surface",
+      "label": "App de consumo cálida", "verdict": "declined",
+      "lineage": "apps de consumo con tarjetas suaves",
+      "thesis": "Tarjetas amables con un solo color de acción.",
+      "palette": ["#fbf6ef", "#ffffff", "#ff6b3d"],
+      "materials": ["tarjetas redondeadas"],
+      "viewport": "Columna de tarjetas con barra inferior.",
+      "case": "Pierde en ambos ejes: es una herramienta de oficina, no una app táctil.",
+      "risk": "Poca densidad para muchas licencias.",
+      "kept": "El color de acción solo donde se puede actuar."
+    },
+    {
+      "id": "challenger-acetate", "kind": "challenger", "catalogId": "rw-manual-acetate-tab-board",
+      "label": "Manual con pestañas", "verdict": "declined",
+      "lineage": "manual de software encuadernado",
+      "thesis": "Secciones como divisores de color.",
+      "palette": ["#e0751f", "#f2c81d", "#f4f4ef"],
+      "materials": ["acetato", "cartón de divisor"],
+      "viewport": "Riel de pestañas en el borde.",
+      "case": "Pierde en ambos ejes: un manual no es una consola de licencias.",
+      "risk": "Disfraz de objeto.",
+      "kept": "Un rasgo físico único por estado."
+    },
+    {
+      "id": "challenger-zoo", "kind": "challenger", "catalogId": "aww2-zoo-gardens-guide-map",
+      "label": "Mapa de zoológico", "verdict": "declined",
+      "lineage": "mapa guía ilustrado",
+      "thesis": "Áreas como lóbulos de color.",
+      "palette": ["#8ED462", "#F5F1E4", "#2C2E2A"],
+      "materials": ["color plano"],
+      "viewport": "Un lóbulo por pantalla.",
+      "case": "Pierde en ambos ejes: sin relación con la tarea.",
+      "risk": "Ilegible para datos densos.",
+      "kept": "Una sola geometría que ordena todo."
+    },
+    {
+      "id": "challenger-stream", "kind": "challenger", "catalogId": "pop-culture-shelf-streaming-title-card-wall",
+      "label": "Muro de streaming", "verdict": "declined",
+      "lineage": "catálogo de streaming",
+      "thesis": "Filas de pósters que crecen al enfocar.",
+      "palette": ["#141414", "#e50914"],
+      "materials": ["pósters"],
+      "viewport": "Filas horizontales.",
+      "case": "Pierde en ambos ejes: las licencias no tienen arte.",
+      "risk": "Navegación lenta.",
+      "kept": "El detalle aparece al enfocar la fila."
+    },
+    {
+      "id": "challenger-jcard", "kind": "challenger", "catalogId": "vernacular-ephemera-cassette-j-card",
+      "label": "Carátula de casete", "verdict": "declined",
+      "lineage": "j-card de mixtape",
+      "thesis": "Lado A y lado B con su capacidad.",
+      "palette": ["#1d3fa0", "#ffffff", "#c8102e"],
+      "materials": ["tinta de pluma"],
+      "viewport": "Lista a mano.",
+      "case": "Pierde en ambos ejes.",
+      "risk": "Informal para contratos.",
+      "kept": "Los límites del plan se ven como capacidad."
+    }
+  ],
+  "reroll": {"registers": ["safer", "bolder"]},
+  "canon": true,
+  "canonCard": {
+    "kind": "canon", "label": "El estándar de la categoría",
+    "thesis": "Un panel SaaS de licencias limpio y conocido.",
+    "palette": ["#ffffff", "#111827", "#4f46e5"],
+    "materials": ["rejilla limpia", "tabla con insignias"],
+    "viewport": "Barra lateral blanca, tabla de licencias con insignias de estado y un botón índigo.",
+    "risk": "Igual a cualquier otro panel.",
+    "html": ".impeccable/mocks/decision/canon.html"
+  },
+  "steer": true
+}
