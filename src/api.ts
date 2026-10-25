@@ -6,7 +6,7 @@ export type Plan = 'trial' | 'monthly' | 'annual' | 'permanent';
 export type LicenseStatus = 'pending' | 'active' | 'expired' | 'revoked';
 export type License = {
     id: string; tenantId: string; siteId: string; customer: string; branchName: string;
-    plan: Plan; trialDays: number | null; features: string[]; limits: { maxUsers: number; maxTables: number };
+    plan: Plan; tier: Tier; addons: Addon[]; trialDays: number | null; features: string[]; limits: { maxUsers: number; maxTables: number; maxTerminals: number };
     revision: number; status: LicenseStatus; createdAt: string; activatedAt: string | null; expiresAt: string | null;
     validatedAt: string | null; revokedAt: string | null; revokeReason: string | null;
     binding: { kind: 'tpm' | 'fingerprint'; keyAlg: string } | null; centralCertificateSha256: string | null;
@@ -20,7 +20,16 @@ export type Admin = { id: string; username: string; deviceName: string; keyAlg: 
 export type AuditEntry = { id: number; at: string; adminId: string | null; action: string; target: string | null; detail: unknown };
 
 export const FEATURES: Record<string, string> = { reservations: 'Reservaciones', reviews: 'Evaluaciones', customerRequests: 'Solicitudes de clientes', printing: 'Impresión de comandas', courses: 'Servicio por tiempos', promotions: 'Promociones', multiBranch: 'Varias sucursales' };
-export const PLANS: Record<Plan, string> = { trial: 'Prueba', monthly: 'Mensual', annual: 'Anual', permanent: 'Permanente' };
+export const PLANS: Record<Plan, string> = { trial: 'Prueba', monthly: 'Mensual', annual: 'Anual', permanent: 'De por vida' };
+// Commercial level and add-ons of the 2026 proposal; the period above is billed separately.
+export type Tier = 'lite' | 'pro';
+export type Addon = 'mobileOrdering' | 'deliveryHub' | 'webOrdering';
+export const TIERS: Record<Tier, { label: string; terminals: number }> = { lite: { label: 'Lite', terminals: 2 }, pro: { label: 'Pro', terminals: 10 } };
+export const ADDONS: Record<Addon, string> = { mobileOrdering: 'Comanderos móviles', deliveryHub: 'Delivery Hub', webOrdering: 'Web propia de pedidos' };
+export const COMBOS: { id: string; label: string; tier: Tier; addons: Addon[] }[] = [
+    { id: 'pyme', label: 'Combo PYME Digital', tier: 'lite', addons: ['mobileOrdering'] },
+    { id: 'delivery', label: 'Combo Delivery Pro', tier: 'pro', addons: ['deliveryHub', 'webOrdering'] },
+];
 
 export class ApiError extends Error {
     constructor(public status: number, public code: string, message: string) { super(message); }
@@ -135,7 +144,7 @@ export const rootKey = () => send<{ kid: string; alg: string; publicKey: string;
 export const audit = (before?: string) => send<{ entries: AuditEntry[] }>('GET', '/admin/v1/audit' + (before ? '?before=' + encodeURIComponent(before) : ''));
 
 // --- Licenses ---
-export type LicenseInput = { customer: string; branchName: string; siteId: string; tenantId?: string; plan: Plan; trialDays?: number; features: string[]; limits: { maxUsers: number; maxTables: number } };
+export type LicenseInput = { customer: string; branchName: string; siteId: string; tenantId?: string; plan: Plan; tier: Tier; addons: Addon[]; trialDays?: number; features: string[]; limits: { maxUsers: number; maxTables: number; maxTerminals?: number } };
 export const licenses = () => send<{ licenses: License[] }>('GET', '/admin/v1/licenses');
 export const createLicense = (input: LicenseInput) => send<{ license: License; activationCode: string }>('POST', '/admin/v1/licenses', input);
 export const updateLicense = (id: string, patch: Partial<Omit<LicenseInput, 'siteId' | 'tenantId'>> & { expiresAt?: string }) => send<{ license: License }>('PATCH', '/admin/v1/licenses/' + id, patch);

@@ -6,7 +6,7 @@ import { mkdirSync } from 'node:fs';
 const shots = 'test-results/screens';
 mkdirSync(shots, { recursive: true });
 const now = Date.now(), iso = (days: number) => new Date(now + days * 86_400_000).toISOString();
-const license = (id: string, customer: string, branchName: string, siteId: string, plan: string, status: string, expires: number | null, extra: object = {}) => ({ id, tenantId: 'grupo-' + siteId.split('-')[0], siteId, customer, branchName, plan, trialDays: plan === 'trial' ? 14 : null, features: ['printing', 'reservations'], limits: { maxUsers: 15, maxTables: 30 }, revision: 3, status, createdAt: iso(-60), activatedAt: status === 'pending' ? null : iso(-30), expiresAt: (expires === null ? null : iso(expires)) as string | null, validatedAt: status === 'active' ? iso(0) : null, revokedAt: (status === 'revoked' ? iso(-3) : null) as string | null, revokeReason: (status === 'revoked' ? 'Cliente canceló el servicio' : null) as string | null, binding: status === 'pending' ? null : { kind: 'tpm', keyAlg: 'ES256' }, centralCertificateSha256: null, ...extra });
+const license = (id: string, customer: string, branchName: string, siteId: string, plan: string, status: string, expires: number | null, extra: object = {}) => ({ id, tenantId: 'grupo-' + siteId.split('-')[0], siteId, customer, branchName, plan, trialDays: plan === 'trial' ? 14 : null, features: ['printing', 'reservations'], limits: { maxUsers: 15, maxTables: 30 }, revision: 3, status, createdAt: iso(-60), activatedAt: status === 'pending' ? null : iso(-30), expiresAt: (expires === null ? null : iso(expires)) as string | null, validatedAt: status === 'active' ? iso(0) : null, revokedAt: (status === 'revoked' ? iso(-3) : null) as string | null, revokeReason: (status === 'revoked' ? 'Cliente canceló el servicio' : null) as string | null, binding: status === 'pending' ? null : { kind: 'tpm', keyAlg: 'ES256' }, centralCertificateSha256: null, tier: 'lite', addons: [] as string[], ...extra, limits: { maxUsers: 15, maxTables: 30, maxTerminals: (extra as any).tier === 'pro' ? 10 : 2 } });
 function fixtures() {
 
     return {
@@ -39,7 +39,7 @@ async function mockServer(page: Page, signedIn = true, delay = 0) {
         const json = (value: unknown, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(value), headers: { 'access-control-allow-origin': '*' } });
         if (path === '/admin/v1/me') return json({ admin: { id: 'a1', username: 'proveedor' } });
         if (path === '/admin/v1/licenses' && method === 'GET') return json({ licenses: data.licenses });
-        if (path === '/admin/v1/licenses' && method === 'POST') { const created = license('11111111-2222-4333-8444-555555555555', body.customer, body.branchName, body.siteId, body.plan, 'pending', null, { features: body.features }); data.licenses.push(created); return json({ license: created, activationCode: 'K7Q2M-9XWZT-4HPLA-R3VNE' }, 201); }
+        if (path === '/admin/v1/licenses' && method === 'POST') { const created = license('11111111-2222-4333-8444-555555555555', body.customer, body.branchName, body.siteId, body.plan, 'pending', null, { features: body.features, tier: body.tier, addons: body.addons }); data.licenses.push(created); return json({ license: created, activationCode: 'K7Q2M-9XWZT-4HPLA-R3VNE' }, 201); }
         const match = path.match(/^\/admin\/v1\/licenses\/([^/]+)\/(renew|revoke|reset-activation)$/);
         if (match) { const l = data.licenses.find(x => x.id === match[1])!; if (match[2] === 'revoke') Object.assign(l, { status: 'revoked', revokedAt: iso(0), revokeReason: body.reason }); if (match[2] === 'renew') Object.assign(l, { expiresAt: iso(32), status: 'active' }); return json(match[2] === 'reset-activation' ? { license: l, activationCode: 'NEW22-CODE3-AFTER-RESET' } : { license: l }); }
         if (path.startsWith('/admin/v1/licenses/') && method === 'PATCH') { const l = data.licenses.find(x => path.endsWith(x.id))!; Object.assign(l, body); return json({ license: l }); }
@@ -103,7 +103,11 @@ test('creating a license shows the ID and activation code once', async ({ page }
     await dialog.getByLabel('Cliente', { exact: true }).fill('Tortas El Güero');
     await dialog.getByLabel('Sucursal', { exact: true }).fill('Iztapalapa');
     await dialog.getByLabel(/Identidad de la sucursal/).fill('guero-izt');
-    await dialog.getByRole('combobox', { name: /^Plan/ }).selectOption('trial');
+    await dialog.getByRole('button', { name: 'Combo Delivery Pro' }).click();
+    await expect(dialog.getByRole('combobox', { name: 'Nivel' })).toHaveValue('pro');
+    await expect(dialog.getByLabel('Delivery Hub')).toBeChecked();
+    await expect(dialog.getByLabel('Terminales fijas')).toHaveAttribute('placeholder', '10');
+    await dialog.getByRole('combobox', { name: 'Periodo' }).selectOption('trial');
     await dialog.getByLabel('Días de prueba').fill('21');
     await dialog.getByLabel('Promociones').check();
     await page.screenshot({ path: `${shots}/license-create-1440.png` });
@@ -112,7 +116,8 @@ test('creating a license shows the ID and activation code once', async ({ page }
     await expect(issued.getByText('K7Q2M-9XWZT-4HPLA-R3VNE')).toBeVisible();
     await expect(issued.getByText('11111111-2222-4333-8444-555555555555')).toBeVisible();
     const sent = calls.find(c => c.method === 'POST' && c.path === '/admin/v1/licenses')!.body;
-    expect(sent).toMatchObject({ siteId: 'guero-izt', plan: 'trial', trialDays: 21, limits: { maxUsers: 15, maxTables: 30 } });
+    expect(sent).toMatchObject({ siteId: 'guero-izt', plan: 'trial', tier: 'pro', addons: ['deliveryHub', 'webOrdering'], trialDays: 21, limits: { maxUsers: 15, maxTables: 30 } });
+    expect(sent.limits.maxTerminals).toBeUndefined();
     expect(sent.features).toContain('promotions');
     await page.screenshot({ path: `${shots}/license-issued-1440.png` });
 
