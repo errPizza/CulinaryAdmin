@@ -5,3 +5,5 @@ test-results/
 playwright-report/
 .impeccable/questions/
 .claude/
+.signing/
+dist-android/
