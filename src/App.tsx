@@ -30,7 +30,7 @@ function Shell({ user, signOut, signedOut }: { user: string; signOut: () => void
     const go = (p: Page) => { setPage(p); sessionStorage.setItem('culinary-admin.page', p); };
     return <div className="shell">
         <nav className="rail" aria-label="Secciones">
-            <div className="brand"><span className="brand-mark"><KeyRound size={17} /></span><div><b>CulinaryAdmin</b><small>Panel del proveedor</small></div></div>
+            <div className="brand"><span className="brand-mark"><KeyRound size={17} /></span><div><b>Culinary Admin</b><small>Panel del proveedor</small></div></div>
             {PAGES.map(([key, label, Icon]) => { const [n, alert] = counts[key] ?? [0, false]; return <button key={key} className="nav" aria-current={page === key ? 'page' : undefined} onClick={() => go(key)}><Icon size={17} />{label}{n > 0 && <span className={'count' + (alert ? ' alert' : '')} aria-label={n + ' pendientes'}>{n}</span>}</button>; })}
             <div className="rail-foot"><span>{user}</span><button className="btn quiet sm" onClick={signOut} aria-label="Cerrar sesión"><LogOut size={15} /></button></div>
         </nav>
