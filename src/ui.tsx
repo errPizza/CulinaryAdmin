@@ -59,4 +59,23 @@ export function Secret({ label, value }: { label: string; value: string }) {
 
 }
 
+// Placeholders while a list loads; widths vary per row so they do not read as a solid block.
+const WIDTHS = ['72%', '48%', '60%', '38%', '66%', '54%'];
+export const Bar = ({ width, small }: { width: string; small?: boolean }) => <span className={'sk' + (small ? ' sm' : '')} style={{ width }} />;
+export function SkeletonRows({ cols, rows = 4 }: { cols: number; rows?: number }) {
+
+    return <>{Array.from({ length: rows }, (_, r) => <tr key={r} className="sk-row" aria-hidden="true">{Array.from({ length: cols }, (_, c) => <td key={c}><Bar width={WIDTHS[(r + c) % WIDTHS.length]} />{c === 0 && <Bar width="40%" small />}</td>)}</tr>)}</>;
+
+}
+export function SkeletonList({ rows = 4 }: { rows?: number }) {
+
+    return <div aria-busy="true" aria-label="Cargando">{Array.from({ length: rows }, (_, r) => <div key={r} className="list-item" aria-hidden="true"><Bar width={WIDTHS[r % WIDTHS.length]} /><Bar width="35%" small /></div>)}</div>;
+
+}
+export function SkeletonPlates({ count = 6 }: { count?: number }) {
+
+    return <section className="rack" aria-busy="true" aria-label="Cargando licencias">{Array.from({ length: count }, (_, i) => <div key={i} className="sk-plate" aria-hidden="true"><Bar width={WIDTHS[i % WIDTHS.length]} /><Bar width="45%" small /><span style={{ flex: 1 }} /><Bar width="30%" small /></div>)}</section>;
+
+}
+
 export function Empty({ title, text, action }: { title: string; text: string; action?: ReactNode }) { return <div className="empty"><h3>{title}</h3><p>{text}</p>{action}</div>; }

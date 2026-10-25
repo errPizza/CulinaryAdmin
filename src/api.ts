@@ -17,7 +17,7 @@ export type Release = { id: string; version: string; platform: string; filename:
 export type Publication = { id: string; releaseId: string; target: 'all' | { licenseIds: string[] }; createdAt: string; withdrawnAt: string | null };
 export type Branch = { tenantId: string; tenantName: string; branchId: string; siteId: string; slug: string; branchName: string; certificateSha256: string | null; licenseStatus: LicenseStatus; features: string[] };
 export type Admin = { id: string; username: string; deviceName: string; keyAlg: string; active: boolean; createdAt: string };
-export type AuditEntry = { id: string; at: string; adminId: string; action: string; target: string; detail: string };
+export type AuditEntry = { id: number; at: string; adminId: string | null; action: string; target: string | null; detail: unknown };
 
 export const FEATURES: Record<string, string> = { reservations: 'Reservaciones', reviews: 'Evaluaciones', customerRequests: 'Solicitudes de clientes', printing: 'Impresión de comandas', courses: 'Servicio por tiempos', promotions: 'Promociones', multiBranch: 'Varias sucursales' };
 export const PLANS: Record<Plan, string> = { trial: 'Prueba', monthly: 'Mensual', annual: 'Anual', permanent: 'Permanente' };
@@ -124,6 +124,8 @@ export async function login(username: string, password: string, totp: string) {
     return reply;
 
 }
+// Forgotten or changed password: this device's key and the authenticator code stand in for the old one. Closes every session.
+export async function resetPassword(username: string, totp: string, newPassword: string) { await signed<{ ok: true }>('POST', '/admin/v1/password', username, { totp, newPassword }); remember(''); }
 export async function logout() { try { await send('POST', '/admin/v1/logout', {}); } finally { remember(''); } }
 export const me = () => send<{ admin: { id: string; username: string } }>('GET', '/admin/v1/me');
 export const admins = () => send<{ admins: Admin[] }>('GET', '/admin/v1/admins');

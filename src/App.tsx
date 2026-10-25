@@ -16,10 +16,10 @@ export function App() {
     const [user, setUser] = useState<string | null>(null), [checked, setChecked] = useState(false);
     useEffect(() => { api.watchSession(() => setUser(null)); if (!api.signedIn()) { setChecked(true); return; } api.me().then(r => setUser(r.admin.username)).catch(() => {}).finally(() => setChecked(true)); }, []);
     if (!checked) return null;
-    return <ToastProvider>{user ? <Shell user={user} signOut={async () => { await api.logout(); setUser(null); }} /> : <Gate onSignedIn={setUser} />}</ToastProvider>;
+    return <ToastProvider>{user ? <Shell user={user} signOut={async () => { await api.logout(); setUser(null); }} signedOut={() => setUser(null)} /> : <Gate onSignedIn={setUser} />}</ToastProvider>;
 
 }
-function Shell({ user, signOut }: { user: string; signOut: () => void }) {
+function Shell({ user, signOut, signedOut }: { user: string; signOut: () => void; signedOut: () => void }) {
 
     const [page, setPage] = useState<Page>(() => (sessionStorage.getItem('culinary-admin.page') as Page) || 'licenses');
     const licenses = useLoad(api.licenses), open = useLoad(() => api.tickets('open'));
@@ -39,7 +39,7 @@ function Shell({ user, signOut }: { user: string; signOut: () => void }) {
             {page === 'releases' && <Releases />}
             {page === 'support' && <Support changed={() => void open.reload()} />}
             {page === 'branches' && <Branches />}
-            {page === 'team' && <Team me={user} />}
+            {page === 'team' && <Team me={user} signedOut={signedOut} />}
         </main>
     </div>;
 

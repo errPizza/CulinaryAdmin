@@ -26,7 +26,7 @@ function fixtures() {
     };
 
 }
-async function mockServer(page: Page, signedIn = true) {
+async function mockServer(page: Page, signedIn = true, delay = 0) {
 
     const data = fixtures();
     const calls: { method: string; path: string; body: any }[] = [];
@@ -35,6 +35,7 @@ async function mockServer(page: Page, signedIn = true) {
         const request = route.request(), url = new URL(request.url()), path = url.pathname, method = request.method();
         const body = request.postDataBuffer() ? JSON.parse(request.postDataBuffer()!.toString() || '{}') : null;
         calls.push({ method, path, body });
+        if (delay) await new Promise(r => setTimeout(r, delay));
         const json = (value: unknown, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(value), headers: { 'access-control-allow-origin': '*' } });
         if (path === '/admin/v1/me') return json({ admin: { id: 'a1', username: 'proveedor' } });
         if (path === '/admin/v1/licenses' && method === 'GET') return json({ licenses: data.licenses });
@@ -50,7 +51,11 @@ async function mockServer(page: Page, signedIn = true) {
         if (path === '/admin/v1/registry') return json({ branches: [{ tenantId: 'grupo-plaza', tenantName: 'Restaurante La Plaza', branchId: '0b6c5c1e-3f0a-4d39-9f5e-1d2a8f3c7b10', siteId: 'plaza-centro', slug: 'plaza-centro', branchName: 'Centro', certificateSha256: 'e3'.repeat(32), licenseStatus: 'active', features: ['multiBranch'] }] });
         if (path === '/admin/v1/admins') return json({ admins: [{ id: 'a1', username: 'proveedor', deviceName: 'Oficina', keyAlg: 'Ed25519', active: true, createdAt: iso(-90) }, { id: 'a2', username: 'soporte', deviceName: 'Laptop de soporte', keyAlg: 'ES256', active: true, createdAt: iso(-20) }] });
         if (path === '/admin/v1/root-key') return json({ kid: 'mXGQnb4LVMQOMwa3', alg: 'EdDSA', publicKey: 'x', spki: 'x', pem: '-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAGZgc2PccPv/TKOhGCEzfIzy01VFqUgJSJE/dmri8zg8=\n-----END PUBLIC KEY-----\n' });
-        if (path === '/admin/v1/audit') return json({ entries: [{ id: 'e1', at: iso(-0.2), adminId: 'a1', action: 'license.renew', target: '0b6c5c1e-3f0a', detail: 'Un periodo' }, { id: 'e2', at: iso(-1), adminId: 'a2', action: 'ticket.reply', target: 't1', detail: '' }] });
+        if (path === '/admin/v1/audit') return json({ entries: [{ id: 3, at: iso(-0.2), adminId: 'a1', action: 'license.renew', target: '0b6c5c1e-3f0a', detail: { until: iso(30).slice(0, 10), plan: 'monthly' } }, { id: 2, at: iso(-1), adminId: 'a2', action: 'ticket.reply', target: 't1', detail: null }, { id: 1, at: iso(-2), adminId: null, action: 'license.create', target: null, detail: { features: ['printing', 'reservations'], limits: { maxUsers: 15 } } }] });
+        if (path === '/admin/v1/challenges') return json({ nonce: 'n' + calls.length });
+        if (path === '/admin/v1/enroll') return json({ adminId: 'a1', totp: { secret: 'JBSWY3DPEHPK3PXP', uri: 'otpauth://totp/CulinaryAdmin:proveedor?secret=JBSWY3DPEHPK3PXP' } }, 201);
+        if (path === '/admin/v1/enroll/confirm') return json({ adminId: 'a1', username: 'proveedor' });
+        if (path === '/admin/v1/password') return json({ ok: true });
         return json({ error: { code: 'not_found', message: 'No existe' } }, 404);
 
     });
@@ -156,7 +161,45 @@ test('support, releases, branches and team pages', async ({ page }) => {
     await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
     await nav(page, 'Equipo y seguridad');
     await expect(page.getByText('kid mXGQnb4LVMQOMwa3')).toBeVisible();
+    await expect(page.getByRole('cell', { name: /features: printing, reservations · limits: maxUsers: 15/ })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Sistema' })).toBeVisible();
     await page.screenshot({ path: `${shots}/team-1440.png`, fullPage: true });
+
+});
+test('lists show skeletons while they load', async ({ page }) => {
+
+    await mockServer(page, true, 1500);
+    await page.goto('/');
+    await expect(page.locator('.sk-plate').first()).toBeVisible();
+    await page.screenshot({ path: `${shots}/licenses-loading-1440.png` });
+    await expect(page.locator('.plate').first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('.sk-plate')).toHaveCount(0);
+    await nav(page, 'Equipo y seguridad');
+    await expect(page.locator('.sk-row').first()).toBeVisible();
+    await expect(page.getByText('kid mXGQnb4LVMQOMwa3')).toBeVisible({ timeout: 10_000 });
+
+});
+test('a forgotten password is replaced with the device key and the authenticator code', async ({ page }) => {
+
+    const calls = await mockServer(page, false);
+    await page.goto('/');
+    await page.getByLabel('Código de alta o invitación').fill('codigo-de-alta-de-prueba-123');
+    await page.getByLabel(/^Usuario/).fill('proveedor');
+    await page.getByLabel(/^Contraseña/).fill('contraseña muy larga 123');
+    await page.getByLabel(/^Repite la contraseña/).fill('contraseña muy larga 123');
+    await page.getByRole('button', { name: 'Dar de alta' }).click();
+    await page.getByLabel('Código que muestra la app').fill('123456');
+    await page.getByRole('button', { name: 'Confirmar' }).click();
+    await page.getByRole('button', { name: 'Olvidé mi contraseña' }).click();
+    await expect(page.getByRole('heading', { name: 'Nueva contraseña' })).toBeVisible();
+    await page.getByLabel(/^Contraseña nueva/).fill('otra contraseña larga 456');
+    await page.getByLabel(/^Repítela/).fill('otra contraseña larga 456');
+    await page.getByLabel('Código de 6 dígitos').fill('654 321');
+    await page.screenshot({ path: `${shots}/password-reset-1440.png` });
+    await page.getByRole('button', { name: 'Guardar contraseña' }).click();
+    await expect(page.getByRole('heading', { name: 'Inicia sesión' })).toBeVisible();
+    const reset = calls.find(c => c.path === '/admin/v1/password');
+    expect(reset?.body).toEqual({ totp: '654321', newPassword: 'otra contraseña larga 456' });
 
 });
 test('sign-in and phone layout fit without horizontal scroll', async ({ page }) => {

@@ -4,7 +4,7 @@ import { KeyRound } from 'lucide-react';
 import * as api from './api';
 import { Secret, useSubmit } from './ui';
 
-type Step = { kind: 'server' } | { kind: 'login'; username: string } | { kind: 'enroll' } | { kind: 'totp'; username: string; secret: string; uri: string };
+type Step = { kind: 'server' } | { kind: 'login'; username: string } | { kind: 'reset'; username: string } | { kind: 'enroll' } | { kind: 'totp'; username: string; secret: string; uri: string };
 
 // Three factors: this computer's key (WebCrypto, never exported), the password and the authenticator code.
 export function Gate({ onSignedIn }: { onSignedIn: (username: string) => void }) {
@@ -18,7 +18,10 @@ export function Gate({ onSignedIn }: { onSignedIn: (username: string) => void })
             <div className="gate-rack">{['', 'lit', '', 'out', '', '', 'out', ''].map((c, i) => <span key={i} className={c} />)}</div>
         </aside>
         <main className="gate-form">{step?.kind === 'server' && <Server next={() => void api.readDevice().then(d => setStep(d ? { kind: 'login', username: d.username } : { kind: 'enroll' }))} />}
-            {step?.kind === 'login' && <Login username={step.username} onSignedIn={onSignedIn} other={() => setStep({ kind: 'enroll' })} server={() => setStep({ kind: 'server' })} />}
+            {step?.kind === 'login' && <Login username={step.username} onSignedIn={onSignedIn} other={() => setStep({ kind: 'enroll' })} server={() => setStep({ kind: 'server' })} forgot={() => setStep({ kind: 'reset', username: step.username })} />}
+            {step?.kind === 'reset' && <><div><h2 style={{ fontSize: 22 }}>Nueva contraseña</h2><p style={{ color: 'var(--muted)', marginTop: 6 }}>La llave de este equipo y el código de tu app autenticadora confirman que eres <b style={{ color: 'var(--ink)' }}>{step.username}</b>.</p></div>
+                <NewPassword username={step.username} done={() => setStep({ kind: 'login', username: step.username })} />
+                <div className="links"><button className="btn quiet sm" onClick={() => setStep({ kind: 'login', username: step.username })}>Volver a iniciar sesión</button></div></>}
             {step?.kind === 'enroll' && <Enroll next={(username, secret, uri) => setStep({ kind: 'totp', username, secret, uri })} back={() => void api.readDevice().then(d => d && setStep({ kind: 'login', username: d.username }))} />}
             {step?.kind === 'totp' && <Confirm {...step} done={() => setStep({ kind: 'login', username: step.username })} />}
         </main>
@@ -36,7 +39,20 @@ function Server({ next }: { next: () => void }) {
         </form></>;
 
 }
-function Login({ username, onSignedIn, other, server }: { username: string; onSignedIn: (u: string) => void; other: () => void; server: () => void }) {
+// Also used from «Equipo y seguridad» to change the password; either way every session closes afterwards.
+export function NewPassword({ username, done }: { username: string; done: () => void }) {
+
+    const [f, setF] = useState({ password: '', confirm: '', totp: '' }), { busy, error, submit } = useSubmit();
+    const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
+    return <form style={{ display: 'flex', flexDirection: 'column', gap: 14 }} onSubmit={e => { e.preventDefault(); void submit(async () => { if (f.password !== f.confirm) throw new Error('Las contraseñas no coinciden'); await api.resetPassword(username, f.totp.replace(/\s/g, ''), f.password); done(); }).then(ok => { if (!ok) setF(v => ({ ...v, totp: '' })); }); }}>
+        <div className="row"><label className="field">Contraseña nueva<small>Mínimo 12 caracteres</small><input className="input" type="password" minLength={12} value={f.password} onChange={set('password')} required autoFocus autoComplete="new-password" /></label><label className="field">Repítela<small>&nbsp;</small><input className="input" type="password" value={f.confirm} onChange={set('confirm')} required autoComplete="new-password" /></label></div>
+        <label className="field">Código de 6 dígitos<input className="input num" inputMode="numeric" pattern="[0-9 ]{6,7}" value={f.totp} onChange={set('totp')} required autoComplete="one-time-code" /></label>
+        {error && <div className="error" role="alert">{error}</div>}
+        <button className="btn primary" disabled={busy}>{busy ? 'Guardando…' : 'Guardar contraseña'}</button>
+    </form>;
+
+}
+function Login({ username, onSignedIn, other, server, forgot }: { username: string; onSignedIn: (u: string) => void; other: () => void; server: () => void; forgot: () => void }) {
 
     const [password, setPassword] = useState(''), [totp, setTotp] = useState(''), { busy, error, submit } = useSubmit();
     return <><div><h2 style={{ fontSize: 22 }}>Inicia sesión</h2><p style={{ color: 'var(--muted)', marginTop: 6 }}>Este equipo firma por <b style={{ color: 'var(--ink)' }}>{username}</b>. Escribe tu contraseña y el código de tu app autenticadora.</p></div>
@@ -46,7 +62,7 @@ function Login({ username, onSignedIn, other, server }: { username: string; onSi
             {error && <div className="error" role="alert">{error}</div>}
             <button className="btn primary" disabled={busy}>{busy ? 'Comprobando…' : 'Entrar'}</button>
         </form>
-        <div className="links"><button className="btn quiet sm" onClick={other}>Dar de alta otra cuenta en este equipo</button><button className="btn quiet sm" onClick={server}>Cambiar servidor</button></div></>;
+        <div className="links"><button className="btn quiet sm" onClick={forgot}>Olvidé mi contraseña</button><button className="btn quiet sm" onClick={other}>Dar de alta otra cuenta en este equipo</button><button className="btn quiet sm" onClick={server}>Cambiar servidor</button></div></>;
 
 }
 function Enroll({ next, back }: { next: (username: string, secret: string, uri: string) => void; back: () => void }) {

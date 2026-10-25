@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { CalendarClock, LayoutGrid, List, Plus, RotateCcw, Search, ShieldOff, Unlink, X } from 'lucide-react';
 import * as api from './api';
 import type { License, LicenseInput, Plan } from './api';
-import { Dialog, Empty, Secret, State, day, daysLeft, useLoad, useSubmit, useToast } from './ui';
+import { Dialog, Empty, Secret, SkeletonPlates, SkeletonRows, State, day, daysLeft, useLoad, useSubmit, useToast } from './ui';
 
 const STATUSES = [['all', 'Todas'], ['active', 'Activas'], ['pending', 'Sin activar'], ['expired', 'Vencidas'], ['revoked', 'Revocadas']] as const;
 const planLine = (l: License) => api.PLANS[l.plan] + (l.plan === 'trial' && l.trialDays ? ` ${l.trialDays} d` : '');
@@ -37,7 +37,8 @@ export function Licenses() {
             <div className="seg" role="group" aria-label="Filtrar por estado">{STATUSES.map(([k, label]) => <button key={k} aria-pressed={filter === k} onClick={() => setFilter(k)}>{label}<span className="num">{k === 'all' ? all.length : all.filter(l => l.status === k).length}</span></button>)}</div>
             <span style={{ flex: 1 }} />
             <div className="seg" role="group" aria-label="Vista"><button aria-pressed={view === 'rack'} onClick={() => choose('rack')}><LayoutGrid size={14} />Casillero</button><button aria-pressed={view === 'table'} onClick={() => choose('table')}><List size={14} />Tabla</button></div></div>
-        {data && !all.length ? <div className="panel"><Empty title="Aún no hay licencias" text="Crea la primera y entrega a tu cliente su identificador y código de activación." action={<button className="btn primary" onClick={() => setCreating(true)}><Plus size={16} />Nueva licencia</button>} /></div>
+        {!data && !error ? (view === 'rack' ? <SkeletonPlates /> : <div className="panel table-scroll"><table><thead><tr><th>Cliente</th><th>Sitio</th><th>Plan</th><th>Equipo</th><th>Vencimiento</th><th>Estado</th></tr></thead><tbody><SkeletonRows cols={6} /></tbody></table></div>)
+            : data && !all.length ? <div className="panel"><Empty title="Aún no hay licencias" text="Crea la primera y entrega a tu cliente su identificador y código de activación." action={<button className="btn primary" onClick={() => setCreating(true)}><Plus size={16} />Nueva licencia</button>} /></div>
             : data && !shown.length ? <div className="panel"><Empty title="Nada coincide" text="Prueba con otro estado o búsqueda." /></div>
             : view === 'rack' ? <section className="rack" aria-label="Casillero de licencias">{shown.map(l => <div className={'hook ' + l.status + (selected === l.id ? ' selected' : '')} key={l.id}><button className={'plate ' + l.status} aria-pressed={selected === l.id} onClick={() => setSelected(l.id)}>
                 <div className="who">{l.customer}</div><div className="where">{l.branchName} · <span className="num">{l.siteId}</span></div>

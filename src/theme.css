@@ -218,6 +218,13 @@ dialog[open] { animation: pop .3s var(--ease); }
 .list-item .top b { flex: 1; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 pre.snippet { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow: auto; font: 12px/1.6 var(--mono); color: var(--text); }
 
+/* Loading placeholders: same boxes as the content they stand in for. */
+.sk { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--panel-2) 30%, var(--raise) 50%, var(--panel-2) 70%) 0 0 / 300% 100%; animation: shimmer 1.4s linear infinite; }
+.sk.sm { height: 9px; margin-top: 7px; }
+.sk-plate { height: 118px; border: 1px solid var(--line); border-radius: 6px 6px 14px 14px; background: var(--panel); padding: 34px 16px 14px; display: flex; flex-direction: column; gap: 9px; margin-top: 16px; }
+tbody tr.sk-row:hover { background: none; }
+
+@keyframes shimmer { to { background-position: -300% 0; } }
 @keyframes fade { from { opacity: 0; } }
 @keyframes slide { from { transform: translateX(40px); opacity: 0; } }
 @keyframes pop { from { transform: translateY(10px) scale(.98); opacity: 0; } }
