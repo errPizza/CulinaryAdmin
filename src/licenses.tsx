@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CalendarClock, LayoutGrid, List, Plus, RotateCcw, Search, ShieldOff, Unlink, X } from 'lucide-react';
+import { CalendarClock, LayoutGrid, List, Plus, RotateCcw, Search, ShieldOff, Trash2, Unlink, X } from 'lucide-react';
 import * as api from './api';
 import type { Addon, License, LicenseInput, Plan, Tier } from './api';
 import { Dialog, Empty, Secret, SkeletonPlates, SkeletonRows, State, day, daysLeft, useLoad, useSubmit, useToast } from './ui';
@@ -56,7 +56,7 @@ export function Licenses() {
             
             : <div className="panel table-scroll"><table><thead><tr><th>Cliente</th><th>Sitio</th><th>Plan</th><th>Equipo</th><th>Vencimiento</th><th>Estado</th></tr></thead><tbody>{shown.map(l => <tr key={l.id} className="clickable" onClick={() => setSelected(l.id)}><td><div className="cell-main">{l.customer}</div><div className="cell-sub">{l.branchName}</div></td><td><code>{l.siteId}</code></td><td>{planLine(l)}</td><td className="cell-sub">{l.binding ? (l.binding.kind === 'tpm' ? 'TPM' : 'Huella') : '—'}</td><td className="num">{expiry(l)}</td><td><State value={l.status} /></td></tr>)}</tbody></table></div>}
        
-        {current && <LicenseDrawer license={current} close={() => setSelected(null)} changed={reload} issued={(r, title) => setIssued({ ...r, title })} />}
+        {current && <LicenseDrawer license={current} close={() => setSelected(null)} changed={reload} issued={(r, title) => setIssued({ ...r, title })} deleted={() => { setSelected(null); void reload(); }} />}
         {creating && <LicenseForm close={() => setCreating(false)} saved={r => { setCreating(false); void reload(); if (r.activationCode) setIssued({ license: r.license, activationCode: r.activationCode, title: 'Licencia creada' }); }} />}
         {issued && <Issued {...issued} close={() => setIssued(null)} />}
    
@@ -74,9 +74,9 @@ function Issued({ license, activationCode, title, close }: { license: License; a
     </Dialog>;
 }
 
-function LicenseDrawer({ license: l, close, changed, issued }: { license: License; close: () => void; changed: () => Promise<void>; issued: (r: { license: License; activationCode: string }, title: string) => void }) {
+function LicenseDrawer({ license: l, close, changed, issued, deleted }: { license: License; close: () => void; changed: () => Promise<void>; issued: (r: { license: License; activationCode: string }, title: string) => void; deleted: () => void }) {
 
-    const [dialog, setDialog] = useState<'edit' | 'renew' | 'revoke' | 'reset' | null>(null);
+    const [dialog, setDialog] = useState<'edit' | 'renew' | 'revoke' | 'reset' | 'delete' | null>(null);
     const closed = l.status === 'revoked';
     
     return <div className="drawer-wrap" onClick={e => e.target === e.currentTarget && close()}><aside className="drawer" aria-label={'Licencia de ' + l.customer}>
@@ -95,19 +95,22 @@ function LicenseDrawer({ license: l, close, changed, issued }: { license: Licens
         <section><h3>Add-ons</h3><div className="chips">{l.addons.length ? l.addons.map(a => <span className="chip" key={a}>{api.ADDONS[a] ?? a}</span>) : <span className="cell-sub">Sin add-ons</span>}</div></section>
         <section><h3>Funciones</h3><div className="chips">{l.features.length ? l.features.map(f => <span className="chip" key={f}>{api.FEATURES[f] ?? f}</span>) : <span className="cell-sub">Solo la operación base</span>}</div></section>
         
-        {!closed && <section><h3>Acciones</h3><div className="row" style={{ gap: 8 }}>
-           
-            <button className="btn" onClick={() => setDialog('edit')}>Editar plan y add-ons</button>
-            <button className="btn" disabled={l.plan === 'permanent' || l.status === 'pending'} onClick={() => setDialog('renew')}><RotateCcw size={15} />Renovar</button>
-            <button className="btn" disabled={l.status === 'pending'} onClick={() => setDialog('reset')}><Unlink size={15} />Liberar equipo</button>
-            <button className="btn danger" onClick={() => setDialog('revoke')}><ShieldOff size={15} />Revocar</button></div>
-           
-            {l.plan === 'permanent' && <p className="cell-sub">La licencia de por vida no se renueva: no vence.</p>}</section>}
+        <section><h3>Acciones</h3><div className="row" style={{ gap: 8 }}>
+
+            {!closed && <>
+                <button className="btn" onClick={() => setDialog('edit')}>Editar licencia</button>
+                <button className="btn" disabled={l.plan === 'permanent' || l.status === 'pending'} onClick={() => setDialog('renew')}><RotateCcw size={15} />Renovar</button>
+                <button className="btn" disabled={l.status === 'pending'} onClick={() => setDialog('reset')}><Unlink size={15} />Liberar equipo</button>
+                <button className="btn danger" onClick={() => setDialog('revoke')}><ShieldOff size={15} />Revocar</button></>}
+            <button className="btn danger" onClick={() => setDialog('delete')}><Trash2 size={15} />Eliminar</button></div>
+
+            {!closed && l.plan === 'permanent' && <p className="cell-sub">La licencia de por vida no se renueva: no vence.</p>}</section>
        
         {dialog === 'edit' && <LicenseForm license={l} close={() => setDialog(null)} saved={() => { setDialog(null); void changed(); }} />}
         {dialog === 'renew' && <Renew license={l} close={() => setDialog(null)} done={() => { setDialog(null); void changed(); }} />}
         {dialog === 'revoke' && <Revoke license={l} close={() => setDialog(null)} done={() => { setDialog(null); void changed(); }} />}
         {dialog === 'reset' && <Reset license={l} close={() => setDialog(null)} done={r => { setDialog(null); void changed(); issued(r, 'Equipo liberado'); }} />}
+        {dialog === 'delete' && <Delete license={l} close={() => setDialog(null)} done={deleted} />}
     
     </aside></div>;
 }
@@ -126,7 +129,9 @@ function LicenseForm({ license, close, saved }: { license?: License; close: () =
         if (!license) { const input: LicenseInput = { ...base, siteId: f.siteId.trim(), ...(f.tenantId.trim() ? { tenantId: f.tenantId.trim() } : {}) }; saved(await api.createLicense(input)); return; }
        
         const patch: Parameters<typeof api.updateLicense>[1] = { ...base };
-       
+
+        if (f.siteId.trim() !== license.siteId) patch.siteId = f.siteId.trim();
+
         if (license.plan === f.plan && license.plan === 'trial' && license.status !== 'pending') delete patch.trialDays;
         if (f.expiresAt) patch.expiresAt = new Date(f.expiresAt + 'T23:59:59').toISOString();
         
@@ -144,6 +149,7 @@ function LicenseForm({ license, close, saved }: { license?: License; close: () =
             <div className="row"><label className="field">Cliente<input className="input" required maxLength={150} {...text('customer')} autoFocus /></label><label className="field">Sucursal<input className="input" required maxLength={150} {...text('branchName')} /></label></div>
            
             {!license && <div className="row"><label className="field">Identidad de la sucursal (siteId)<small>La que tiene su servidor de CulinaryOS</small><input className="input num" required pattern="[a-z0-9\-]{1,32}" {...text('siteId')} spellCheck={false} /></label><label className="field">Empresa (tenantId)<small>Opcional; agrupa sus sucursales</small><input className="input num" pattern="[a-z0-9\-]{1,64}" {...text('tenantId')} spellCheck={false} /></label></div>}
+            {license && <label className="field">Identidad de la sucursal (siteId)<small>{license.binding ? 'Ligada a un equipo: libera el equipo para cambiarla' : 'La que muestra su servidor de CulinaryOS al activar'}</small><input className="input num" required pattern="[a-z0-9\-]{1,32}" {...text('siteId')} disabled={!!license.binding} spellCheck={false} /></label>}
            
             <div className="field" style={{ fontSize: 12.5, fontWeight: 600 }}>Combo<div className="seg" role="group" aria-label="Combo"><button type="button" aria-pressed={!combo} onClick={() => setF({ ...f, addons: [] })}>Sin combo</button>{api.COMBOS.map(c => <button type="button" key={c.id} aria-pressed={combo === c.id} onClick={() => setF({ ...f, tier: c.tier, addons: c.addons })}>{c.label}</button>)}</div></div>
             <div className="row"><label className="field">Nivel<select className="input" value={f.tier} onChange={e => setF({ ...f, tier: e.target.value as Tier })}>{Object.entries(api.TIERS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></label>
@@ -198,6 +204,21 @@ function Revoke({ license: l, close, done }: { license: License; close: () => vo
         
         {error && <div className="error" role="alert">{error}</div>}
     
+    </Dialog>;
+}
+
+function Delete({ license: l, close, done }: { license: License; close: () => void; done: () => void }) {
+
+    const [confirm, setConfirm] = useState(''), { busy, error, submit } = useSubmit(), toast = useToast();
+    const live = l.status !== 'revoked';
+
+    return <Dialog title="Eliminar licencia" onClose={close} busy={busy} footer={<><button className="btn quiet" onClick={close} disabled={busy}>Cancelar</button><button className="btn primary" disabled={busy || confirm.trim() !== l.siteId} onClick={() => void submit(async () => { await api.deleteLicense(l.id); toast('Licencia eliminada'); done(); })}>Eliminar</button></>}>
+
+        <p><b style={{ color: 'var(--ink)' }}>{l.customer} · {l.branchName}</b> dejará de salir en el panel y su siteId queda libre para otra licencia. {live ? 'También se revoca: si una sucursal la usa, se bloquea en su siguiente contacto.' : ''} Sus tickets y la bitácora se conservan.</p>
+        <label className="field">Escribe <code>{l.siteId}</code> para confirmar<input className="input num" value={confirm} onChange={e => setConfirm(e.target.value)} autoComplete="off" spellCheck={false} /></label>
+
+        {error && <div className="error" role="alert">{error}</div>}
+
     </Dialog>;
 }
 

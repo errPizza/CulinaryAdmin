@@ -161,7 +161,8 @@ export const audit = (before?: string) => send<{ entries: AuditEntry[] }>('GET',
 export type LicenseInput = { customer: string; branchName: string; siteId: string; tenantId?: string; plan: Plan; tier: Tier; addons: Addon[]; trialDays?: number; features: string[]; limits: { maxUsers: number; maxTables: number; maxTerminals?: number } };
 export const licenses = () => send<{ licenses: License[] }>('GET', '/admin/v1/licenses');
 export const createLicense = (input: LicenseInput) => send<{ license: License; activationCode: string }>('POST', '/admin/v1/licenses', input);
-export const updateLicense = (id: string, patch: Partial<Omit<LicenseInput, 'siteId' | 'tenantId'>> & { expiresAt?: string }) => send<{ license: License }>('PATCH', '/admin/v1/licenses/' + id, patch);
+export const updateLicense = (id: string, patch: Partial<Omit<LicenseInput, 'tenantId'>> & { expiresAt?: string }) => send<{ license: License }>('PATCH', '/admin/v1/licenses/' + id, patch);
+export const deleteLicense = (id: string) => send<{ ok: true }>('DELETE', '/admin/v1/licenses/' + id);
 export const renewLicense = (id: string, until?: string) => send<{ license: License }>('POST', `/admin/v1/licenses/${id}/renew`, until ? { until } : {});
 export const revokeLicense = (id: string, reason: string) => send<{ license: License }>('POST', `/admin/v1/licenses/${id}/revoke`, { reason });
 export const resetActivation = (id: string) => send<{ license: License; activationCode: string }>('POST', `/admin/v1/licenses/${id}/reset-activation`, {});

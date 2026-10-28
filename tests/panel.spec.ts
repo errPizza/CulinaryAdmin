@@ -43,6 +43,7 @@ async function mockServer(page: Page, signedIn = true, delay = 0) {
         const match = path.match(/^\/admin\/v1\/licenses\/([^/]+)\/(renew|revoke|reset-activation)$/);
         if (match) { const l = data.licenses.find(x => x.id === match[1])!; if (match[2] === 'revoke') Object.assign(l, { status: 'revoked', revokedAt: iso(0), revokeReason: body.reason }); if (match[2] === 'renew') Object.assign(l, { expiresAt: iso(32), status: 'active' }); return json(match[2] === 'reset-activation' ? { license: l, activationCode: 'NEW22-CODE3-AFTER-RESET' } : { license: l }); }
         if (path.startsWith('/admin/v1/licenses/') && method === 'PATCH') { const l = data.licenses.find(x => path.endsWith(x.id))!; Object.assign(l, body); return json({ license: l }); }
+        if (path.startsWith('/admin/v1/licenses/') && method === 'DELETE') { data.licenses = data.licenses.filter(x => !path.endsWith(x.id)); return json({ ok: true }); }
         if (path === '/admin/v1/tickets') return json({ tickets: data.tickets.filter(t => !url.searchParams.get('status') || t.status === url.searchParams.get('status')) });
         if (path === '/admin/v1/tickets/t1') return json({ ticket: data.tickets[0] });
         if (path === '/admin/v1/tickets/t1/messages') { data.tickets[0].messages.push({ id: 'm' + Date.now(), author: 'admin', adminId: 'a1', body: body.message, createdAt: iso(0) }); data.tickets[0].status = 'answered'; return json({ ticket: data.tickets[0] }, 201); }
@@ -143,6 +144,39 @@ test('revoking asks for the site ID; renewing and releasing call the API', async
     await page.screenshot({ path: `${shots}/license-revoke-1440.png` });
     await go.click();
     await expect.poll(() => calls.find(c => c.path.endsWith('/revoke'))?.body).toEqual({ reason: 'Cliente canceló' });
+
+});
+test('the site ID changes only while no machine holds the license', async ({ page }) => {
+
+    const calls = await mockServer(page);
+    await page.goto('/');
+    await page.locator('.plate', { hasText: 'Taquería Don Beto' }).click();
+    await page.getByRole('button', { name: 'Editar licencia' }).click();
+    await expect(page.getByRole('dialog', { name: 'Editar licencia' }).getByLabel(/siteId/)).toBeDisabled();
+    await page.getByRole('button', { name: 'Cancelar' }).click();
+    await page.locator('.drawer header').getByRole('button', { name: 'Cerrar' }).click();
+    await page.locator('.plate', { hasText: 'Mariscos El Faro' }).click();
+    await page.getByRole('button', { name: 'Editar licencia' }).click();
+    const edit = page.getByRole('dialog', { name: 'Editar licencia' });
+    await edit.getByLabel(/siteId/).fill('faro-boca-2');
+    await edit.getByRole('button', { name: 'Guardar cambios' }).click();
+    await expect.poll(() => calls.find(c => c.method === 'PATCH')?.body.siteId).toBe('faro-boca-2');
+
+});
+test('deleting asks for the site ID and removes the license from the panel', async ({ page }) => {
+
+    const calls = await mockServer(page);
+    await page.goto('/');
+    await page.locator('.plate', { hasText: 'Fonda Doña Lupe' }).click();
+    await page.getByRole('button', { name: 'Eliminar' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Eliminar licencia' });
+    const go = dialog.getByRole('button', { name: 'Eliminar' });
+    await expect(go).toBeDisabled();
+    await dialog.getByLabel(/para confirmar/).fill('lupe-pue');
+    await page.screenshot({ path: `${shots}/license-delete-1440.png` });
+    await go.click();
+    await expect.poll(() => calls.some(c => c.method === 'DELETE' && c.path.endsWith('f2e5a013-9f0a-4b1c-8d2e-4f5a6b7c8d9e'))).toBe(true);
+    await expect(page.locator('.plate', { hasText: 'Fonda Doña Lupe' })).toHaveCount(0);
 
 });
 test('support, releases, branches and team pages', async ({ page }) => {
