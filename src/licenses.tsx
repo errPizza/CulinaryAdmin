@@ -225,12 +225,14 @@ function Delete({ license: l, close, done }: { license: License; close: () => vo
 function Reset({ license: l, close, done }: { license: License; close: () => void; done: (r: { license: License; activationCode: string }) => void }) {
 
     const { busy, error, submit } = useSubmit();
-    
-    return <Dialog title="Liberar el equipo" onClose={close} busy={busy} footer={<><button className="btn quiet" onClick={close} disabled={busy}>Cancelar</button><button className="btn primary" disabled={busy} onClick={() => void submit(async () => done(await api.resetActivation(l.id)))}>Liberar y generar código</button></>}>
-        
-        <p>Úsalo cuando la sucursal cambió de servidor o de dos piezas de hardware. Se borran su llave, su huella y su registro mTLS, y se genera un código de activación nuevo. El equipo actual deja de renovar.</p>
-        
-        {error && <div className="error" role="alert">{error}</div>}
+    const [reason, setReason] = useState('');
+
+    return <Dialog title="Liberar el equipo" onClose={close} busy={busy} footer={<><button className="btn quiet" onClick={close} disabled={busy}>Cancelar</button><button className="btn primary" disabled={busy || !reason.trim()} onClick={() => void submit(async () => done(await api.resetActivation(l.id, reason)))}>Liberar y generar código</button></>}>
+
+        <p>Úsalo cuando la sucursal cambió de servidor o de dos piezas de hardware. Se borran su huella y su registro mTLS, y se genera un código de activación nuevo. El equipo actual se bloquea en su siguiente contacto. Los datos de la sucursal no se tocan.</p>
+        <label className="field">Motivo (queda en la bitácora)<input className="input" value={reason} onChange={e => setReason(e.target.value)} maxLength={500} autoComplete="off" /></label>
+
+{error && <div className="error" role="alert">{error}</div>}
    
     </Dialog>;
 }

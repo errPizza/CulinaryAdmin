@@ -165,7 +165,7 @@ export const updateLicense = (id: string, patch: Partial<Omit<LicenseInput, 'ten
 export const deleteLicense = (id: string) => send<{ ok: true }>('DELETE', '/admin/v1/licenses/' + id);
 export const renewLicense = (id: string, until?: string) => send<{ license: License }>('POST', `/admin/v1/licenses/${id}/renew`, until ? { until } : {});
 export const revokeLicense = (id: string, reason: string) => send<{ license: License }>('POST', `/admin/v1/licenses/${id}/revoke`, { reason });
-export const resetActivation = (id: string) => send<{ license: License; activationCode: string }>('POST', `/admin/v1/licenses/${id}/reset-activation`, {});
+export const resetActivation = (id: string, reason: string) => send<{ license: License; activationCode: string }>('POST', `/admin/v1/licenses/${id}/reset-activation`, { reason });
 
 export const releases = () => send<{ releases: Release[] }>('GET', '/admin/v1/releases');
 export const signRelease = (id: string, manifest: string) => send<{ release: Release }>('PUT', `/admin/v1/releases/${id}/manifest`, { manifest });
