@@ -7,7 +7,7 @@ export const moment = (v?: string | null) => v ? new Date(v).toLocaleString('es-
 export const daysLeft = (v?: string | null) => v ? Math.ceil((Date.parse(v) - Date.now()) / 86_400_000) : null;
 export const message = (e: unknown) => e instanceof ApiError ? e.message : e instanceof Error ? e.message : 'Algo salió mal';
 
-const STATE_LABELS: Record<string, string> = { active: 'Activa', pending: 'Sin activar', expired: 'Vencida', revoked: 'Revocada', open: 'Esperando respuesta', answered: 'Respondido', closed: 'Cerrado', uploading: 'Subiendo', ready: 'Lista' };
+const STATE_LABELS: Record<string, string> = { active: 'Activa', pending: 'Sin activar', expired: 'Vencida', revoked: 'Revocada', open: 'Esperando respuesta', answered: 'Respondido', closed: 'Cerrado', uploading: 'Subiendo', signing: 'Falta firma', ready: 'Lista' };
 
 export function State({ value, label }: { value: string; label?: string }) { return <span className={'state ' + value}>{label ?? STATE_LABELS[value] ?? value}</span>; }
 export function useLoad<T>(load: () => Promise<T>, deps: unknown[] = []) {

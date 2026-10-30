@@ -119,6 +119,8 @@ tr:last-child td { border-bottom: 0; }
 .state.answered { color: var(--green); background: var(--green-wash); }
 .state.closed { color: var(--muted); background: var(--panel-2); }
 .state.uploading { color: var(--amber); background: rgba(232, 173, 79, .12); }
+.state.signing { color: var(--amber); border: 1px dashed var(--amber); }
+.station-command { display: block; padding: 10px 12px; border-radius: 8px; background: var(--panel-2); font: 12px/1.5 var(--mono, ui-monospace, monospace); white-space: pre-wrap; word-break: break-all; user-select: all; }
 .state.ready { color: var(--green); background: var(--green-wash); }
 
 

@@ -11,7 +11,7 @@ export type License = {
 };
 export type Message = { id: string; author: 'branch' | 'admin'; adminId: string | null; body: string; createdAt: string };
 export type Ticket = { id: string; licenseId: string; customer?: string; branchName?: string; siteId?: string; subject: string; status: 'open' | 'answered' | 'closed'; createdAt: string; updatedAt: string; messages?: Message[] };
-export type Release = { id: string; version: string; platform: string; filename: string; notes: string; status: 'uploading' | 'ready'; bytes: number | null; sha512: string | null; createdAt: string };
+export type Release = { id: string; version: string; platform: string; filename: string; notes: string; status: 'uploading' | 'signing' | 'ready'; bytes: number | null; sha512: string | null; createdAt: string };
 export type Publication = { id: string; releaseId: string; target: 'all' | { licenseIds: string[] }; createdAt: string; withdrawnAt: string | null };
 export type Branch = { tenantId: string; tenantName: string; branchId: string; siteId: string; slug: string; branchName: string; certificateSha256: string | null; licenseStatus: LicenseStatus; features: string[] };
 export type Admin = { id: string; username: string; deviceName: string; keyAlg: string; active: boolean; createdAt: string };
@@ -168,6 +168,7 @@ export const revokeLicense = (id: string, reason: string) => send<{ license: Lic
 export const resetActivation = (id: string) => send<{ license: License; activationCode: string }>('POST', `/admin/v1/licenses/${id}/reset-activation`, {});
 
 export const releases = () => send<{ releases: Release[] }>('GET', '/admin/v1/releases');
+export const signRelease = (id: string, manifest: string) => send<{ release: Release }>('PUT', `/admin/v1/releases/${id}/manifest`, { manifest });
 export const publications = () => send<{ publications: Publication[] }>('GET', '/admin/v1/publications');
 export const withdraw = (id: string) => send<{ publication: Publication }>('POST', `/admin/v1/publications/${id}/withdraw`, {});
 export const publish = (releaseId: string, target: Publication['target']) => send<{ publication: Publication }>('POST', '/admin/v1/publications', { releaseId, target });

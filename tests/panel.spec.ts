@@ -21,7 +21,7 @@ function fixtures() {
             license('03f6b124-0a1b-4c2d-9e3f-5a6b7c8d9e0f', 'Cantina La 20', 'Centro', 'la20-centro', 'monthly', 'active', 25),
         ],
         tickets: <any[]>[{ id: 't1', licenseId: '0b6c5c1e-3f0a-4d39-9f5e-1d2a8f3c7b10', customer: 'Restaurante La Plaza', branchName: 'Centro', siteId: 'plaza-centro', subject: 'No imprime la comanda de cocina', status: 'open', createdAt: iso(-1), updatedAt: iso(-0.1), messages: [{ id: 'm1', author: 'branch', adminId: null, body: 'Desde la mañana la impresora de cocina no responde. Ya la reiniciamos.', createdAt: iso(-1) }] }],
-        releases: [{ id: 'r1', version: '1.4.0', platform: 'win-x64', filename: 'culinary-1.4.0.exe', notes: 'Corrige la impresión de comandas', status: 'ready', bytes: 48213004, sha512: 'ab'.repeat(64), createdAt: iso(-4) }, { id: 'r2', version: '1.4.0', platform: 'linux-x64', filename: 'culinary-1.4.0.deb', notes: 'Servidor de sucursal', status: 'ready', bytes: 61211004, sha512: 'cd'.repeat(64), createdAt: iso(-4) }],
+        releases: [{ id: 'r1', version: '1.4.0', platform: 'win-x64', filename: 'culinary-1.4.0.exe', notes: 'Corrige la impresión de comandas', status: 'ready', bytes: 48213004, sha512: 'ab'.repeat(64), createdAt: iso(-4) }, { id: 'r2', version: '1.4.0', platform: 'linux-x64', filename: 'culinary-1.4.0.deb', notes: 'Servidor de sucursal', status: 'ready', bytes: 61211004, sha512: 'cd'.repeat(64), createdAt: iso(-4) }, { id: 'r3', version: '1.5.0', platform: 'win-x64', filename: 'culinary-1.5.0.exe', notes: 'Cobro con Clip', status: 'signing', bytes: 48300000, sha512: 'ef'.repeat(64), createdAt: iso(0) }],
         publications: [{ id: 'p1', releaseId: 'r1', target: 'all', createdAt: iso(-3), withdrawnAt: null }],
     };
 
@@ -48,6 +48,7 @@ async function mockServer(page: Page, signedIn = true, delay = 0) {
         if (path === '/admin/v1/tickets/t1') return json({ ticket: data.tickets[0] });
         if (path === '/admin/v1/tickets/t1/messages') { data.tickets[0].messages.push({ id: 'm' + Date.now(), author: 'admin', adminId: 'a1', body: body.message, createdAt: iso(0) }); data.tickets[0].status = 'answered'; return json({ ticket: data.tickets[0] }, 201); }
         if (path === '/admin/v1/releases') return json({ releases: data.releases });
+        if (path === '/admin/v1/releases/r3/manifest' && method === 'PUT') { const r = data.releases.find(x => x.id === 'r3')!; Object.assign(r, { status: 'ready', manifest: body.manifest }); return json({ release: r }); }
         if (path === '/admin/v1/publications') return json({ publications: data.publications });
         if (path === '/admin/v1/registry') return json({ branches: [{ tenantId: 'grupo-plaza', tenantName: 'Restaurante La Plaza', branchId: '0b6c5c1e-3f0a-4d39-9f5e-1d2a8f3c7b10', siteId: 'plaza-centro', slug: 'plaza-centro', branchName: 'Centro', certificateSha256: 'e3'.repeat(32), licenseStatus: 'active', features: ['multiBranch'] }] });
         if (path === '/admin/v1/admins') return json({ admins: [{ id: 'a1', username: 'proveedor', deviceName: 'Oficina', keyAlg: 'Ed25519', active: true, createdAt: iso(-90) }, { id: 'a2', username: 'soporte', deviceName: 'Laptop de soporte', keyAlg: 'ES256', active: true, createdAt: iso(-20) }] });
@@ -181,7 +182,7 @@ test('deleting asks for the site ID and removes the license from the panel', asy
 });
 test('support, releases, branches and team pages', async ({ page }) => {
 
-    await mockServer(page);
+    const calls = await mockServer(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
     await expect(page.getByRole('button', { name: /Soporte/ }).locator('.count')).toHaveText('1');
@@ -193,6 +194,13 @@ test('support, releases, branches and team pages', async ({ page }) => {
     await page.screenshot({ path: `${shots}/support-1440.png` });
     await nav(page, 'Versiones');
     await expect(page.getByRole('cell', { name: 'Todas las licencias' })).toBeVisible();
+    await expect(page.getByText('Falta firma')).toBeVisible();
+    await page.getByRole('button', { name: 'Firmar' }).click();
+    await expect(page.locator('.station-command').first()).toContainText('--release-id r3 --version 1.5.0 --platform win-x64');
+    await page.getByLabel('Firma que imprimió la estación').fill('eyJhbGciOiJFZERTQSJ9.eyJ2IjoxfQ.firma-de-la-estacion-de-prueba');
+    await page.getByRole('button', { name: 'Guardar firma' }).click();
+    await expect(page.getByText('Versión firmada y lista para publicar')).toBeVisible();
+    expect(calls.some(c => c.method === 'PUT' && c.path === '/admin/v1/releases/r3/manifest')).toBe(true);
     await page.screenshot({ path: `${shots}/releases-1440.png` });
     await nav(page, 'Sucursales');
     await page.getByRole('button', { name: 'Datos de aprovisionamiento' }).click();
