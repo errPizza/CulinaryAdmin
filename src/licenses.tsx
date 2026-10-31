@@ -232,7 +232,7 @@ function Reset({ license: l, close, done }: { license: License; close: () => voi
         <p>Úsalo cuando la sucursal cambió de servidor o de dos piezas de hardware. Se borran su huella y su registro mTLS, y se genera un código de activación nuevo. El equipo actual se bloquea en su siguiente contacto. Los datos de la sucursal no se tocan.</p>
         <label className="field">Motivo (queda en la bitácora)<input className="input" value={reason} onChange={e => setReason(e.target.value)} maxLength={500} autoComplete="off" /></label>
 
-{error && <div className="error" role="alert">{error}</div>}
+        {error && <div className="error" role="alert">{error}</div>}
    
     </Dialog>;
 }

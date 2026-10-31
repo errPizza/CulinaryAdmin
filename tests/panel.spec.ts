@@ -136,7 +136,7 @@ test('revoking asks for the site ID; renewing and releasing call the API', async
     await expect(page.getByRole('button', { name: 'Liberar y generar código' })).toBeDisabled();
     await page.getByLabel('Motivo (queda en la bitácora)').fill('Falló la placa');
     await page.getByRole('button', { name: 'Liberar y generar código' }).click();
-await expect(page.getByRole('dialog', { name: 'Equipo liberado' }).getByText('NEW22-CODE3-AFTER-RESET')).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Equipo liberado' }).getByText('NEW22-CODE3-AFTER-RESET')).toBeVisible();
     await page.getByRole('button', { name: 'Ya los guardé' }).click();
     await page.getByRole('button', { name: 'Revocar' }).click();
     const revoke = page.getByRole('dialog', { name: 'Revocar licencia' });
