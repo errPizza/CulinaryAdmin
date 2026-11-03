@@ -17,9 +17,9 @@ powershell -ExecutionPolicy Bypass -File tools/build-windows.ps1          # inst
 powershell -ExecutionPolicy Bypass -File tools/build-android.ps1 -Release # APK ARM64 firmado en dist-android
 ```
 
-Ambos scripts toman Rust y MSVC de `../MesaNexoNativo/.tools`. Android necesita JDK 17 (Microsoft OpenJDK), el SDK de Android en `%LOCALAPPDATA%\Android\Sdk` (platform-tools, platforms;android-34, build-tools;34.0.0, ndk;27.2.12479018) y `rustup target add aarch64-linux-android`. Sin el modo de desarrollador de Windows, Tauri no puede crear su enlace simbólico; el script copia la biblioteca y empaqueta con Gradle. El APK se firma con una llave local de prueba en `.signing/` (fuera de git); para distribuirlo en una tienda usa una llave propia.
+Ambos scripts toman Rust y MSVC de `../MesaNexoNativo/.tools`. Android necesita JDK 17 (Microsoft OpenJDK), el SDK de Android en `%LOCALAPPDATA%\Android\Sdk` (platform-tools, platforms;android-34, build-tools;34.0.0, ndk;27.2.12479018) y `rustup target add aarch64-linux-android`. Sin el modo de desarrollador de Windows, Tauri no puede crear su enlace simbólico; el script copia la biblioteca y empaqueta con Gradle. Ambos se firman con las llaves de Culinary de `%USERPROFILE%\.culinary-firma`, creadas por `../MesaNexoNativo/tools/New-SigningKeys.ps1` (ver `docs/FIRMA.md` de ese repositorio).
 
-Contra un worker local: en CulinaryServer crea `.dev.vars` con `ROOT_PRIVATE_KEY`, `ADMIN_SETUP_CODE` y `ADMIN_ORIGINS=http://127.0.0.1:5180`, aplica `npx wrangler d1 migrations apply culinary-server --local` y corre `npx wrangler dev`.
+Contra un worker local: en CulinaryServer crea `.dev.vars` con `LICENSE_SIGNING_KEY`, `LICENSE_SIGNING_CHAIN`, `CHALLENGE_KEY`, `ADMIN_SETUP_CODE` y `ADMIN_ORIGINS=http://127.0.0.1:5180` de una cadena de desarrollo, aplica `npx wrangler d1 migrations apply culinary-server --local` y corre `npx wrangler dev`.
 
 ## Producción
 

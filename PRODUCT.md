@@ -20,7 +20,7 @@ The provider's administration program for Culinary Restaurant. It talks only to 
 
 ## Positioning
 
-The only place licenses are minted. Each license is signed by the provider's root key in CulinaryServer and bound to one branch machine (TPM or hardware fingerprint). The panel never holds the root key.
+The only place licenses are minted. Each license is signed in CulinaryServer by a license intermediate that chains to the provider's offline root, and bound to one branch machine (TPM or hardware fingerprint). Neither the panel nor the Worker holds the root key.
 
 ## Operating Context
 
@@ -30,7 +30,7 @@ The only place licenses are minted. Each license is signed by the provider's roo
 - Updates: multipart upload to R2, then publish to all licenses or to chosen licenses; withdraw.
 - Support: tickets open, answered, closed; reply and close.
 - Branch registry for the multi-company central (`--provision-tenant` fields), audit log, root public key.
-- The branch has 3 days of offline grace; an expired license locks the branch completely.
+- The branch has 7 days of offline grace; an expired license locks the branch completely.
 
 ## Capabilities and Constraints
 

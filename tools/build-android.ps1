@@ -28,14 +28,14 @@ try{
         try{& .\gradlew.bat "assembleArm64$variant" -x "rustBuildArm64$variant";if($LASTEXITCODE){throw 'Falló Gradle.'}}finally{Pop-Location}
     }
     if($Release){
-        # Signed with a local test key kept in .signing (outside git); a store release needs its own key.
+        # Signed with the Culinary key (MesaNexoNativo/tools/New-SigningKeys.ps1), kept outside the repository.
         $bt=Get-ChildItem (Join-Path $env:ANDROID_HOME 'build-tools') -Directory | Sort-Object Name -Descending | Select-Object -First 1
-        New-Item -ItemType Directory -Force '.signing','dist-android' | Out-Null
-        if(-not(Test-Path '.signing/prueba.jks')){$pass=[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(18));Set-Content '.signing/prueba.pass' $pass -NoNewline;& "$env:JAVA_HOME\bin\keytool.exe" -genkeypair -keystore .signing/prueba.jks -alias culinary-admin -keyalg RSA -keysize 3072 -validity 3650 -storepass $pass -keypass $pass -dname 'CN=CulinaryAdmin prueba'}
-        $pass=(Get-Content '.signing/prueba.pass' -Raw).Trim()
+        $keys=Join-Path $env:USERPROFILE '.culinary-firma'
+        New-Item -ItemType Directory -Force 'dist-android' | Out-Null
+        $pass=(Get-Content (Join-Path $keys 'android.pass') -Raw).Trim()
         $unsigned=Get-ChildItem 'src-tauri/gen/android/app/build/outputs/apk' -Recurse -Filter '*release-unsigned.apk' | Select-Object -First 1
         & (Join-Path $bt.FullName 'zipalign.exe') -f -p 4 $unsigned.FullName 'dist-android/aligned.apk'
-        & (Join-Path $bt.FullName 'apksigner.bat') sign --ks .signing/prueba.jks --ks-pass "pass:$pass" --out 'dist-android/CulinaryAdmin-arm64.apk' 'dist-android/aligned.apk'
+        & (Join-Path $bt.FullName 'apksigner.bat') sign --ks (Join-Path $keys 'culinary-android.jks') --ks-key-alias culinary --ks-pass "pass:$pass" --out 'dist-android/CulinaryAdmin-arm64.apk' 'dist-android/aligned.apk'
         if($LASTEXITCODE){throw 'No se pudo firmar el APK.'}
         Remove-Item 'dist-android/aligned.apk'
         "APK firmado: $(Resolve-Path 'dist-android/CulinaryAdmin-arm64.apk')"

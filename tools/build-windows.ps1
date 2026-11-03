@@ -19,7 +19,11 @@ if($compiler -and (Test-Path (Join-Path $sdk 'microsoft.windows.sdk.cpp.x64/c/um
 Push-Location $root
 try{
     if(-not(Test-Path 'node_modules')){& npm.cmd ci --no-audit --no-fund;if($LASTEXITCODE){throw 'No se pudieron instalar las dependencias.'}}
-    & npm.cmd run tauri -- build
+    # Firma con las llaves de Culinary (MesaNexoNativo/tools/New-SigningKeys.ps1).
+    $config=Join-Path $root 'src-tauri/target/firma.json'
+    $sign=@{bundle=@{windows=@{signCommand=@{cmd='powershell';args=@('-NoProfile','-ExecutionPolicy','Bypass','-File',(Join-Path (Split-Path $root -Parent) 'MesaNexoNativo/tools/Sign-Package.ps1'),'%1')}}}} | ConvertTo-Json -Depth 6
+    [IO.File]::WriteAllText($config,$sign)
+    & npm.cmd run tauri -- build --config $config
     if($LASTEXITCODE){throw 'Falló la compilación de Tauri.'}
     Get-ChildItem 'src-tauri/target/release/bundle/nsis/*.exe' | ForEach-Object { "Instalador: $($_.FullName)" }
 }finally{Pop-Location}

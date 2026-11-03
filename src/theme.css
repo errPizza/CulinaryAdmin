@@ -122,6 +122,9 @@ tr:last-child td { border-bottom: 0; }
 .state.signing { color: var(--amber); border: 1px dashed var(--amber); }
 .station-command { display: block; padding: 10px 12px; border-radius: 8px; background: var(--panel-2); font: 12px/1.5 var(--mono, ui-monospace, monospace); white-space: pre-wrap; word-break: break-all; user-select: all; }
 .state.ready { color: var(--green); background: var(--green-wash); }
+.state.error { color: var(--amber); background: rgba(232, 173, 79, .12); }
+.state.critical { color: var(--red-ink); background: var(--red-wash); }
+.state.resolved { color: var(--green); background: var(--green-wash); }
 
 
 .due { display: grid; grid-template-columns: auto 1fr; gap: 0 22px; background: linear-gradient(180deg, #121215, #0f0f12); border: 1px solid var(--line); border-radius: 14px; padding: 14px 20px; }
@@ -242,3 +245,13 @@ tbody tr.sk-row:hover { background: none; }
   .due-what span:last-child { display: none; }
   .table-scroll { overflow-x: auto; }
 }
+
+.fault { display: flex; flex-direction: column; gap: 18px; }
+.fault h3 { font: 600 12.5px var(--sans); color: var(--muted); margin: 0 0 6px; }
+.fault p { margin: 0; overflow-wrap: anywhere; }
+.fault dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 5px 16px; margin: 0; }
+.fault .dl-row { display: contents; }
+.fault dt { color: var(--muted); font-size: 12.5px; }
+.fault dd { margin: 0; overflow-wrap: anywhere; }
+.fault pre { margin: 0; max-height: 320px; overflow: auto; padding: 12px; border-radius: 8px; background: var(--panel-2); color: var(--text); font: 12px/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.fault-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }

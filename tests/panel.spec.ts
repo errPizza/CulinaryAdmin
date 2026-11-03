@@ -23,6 +23,7 @@ function fixtures() {
         tickets: <any[]>[{ id: 't1', licenseId: '0b6c5c1e-3f0a-4d39-9f5e-1d2a8f3c7b10', customer: 'Restaurante La Plaza', branchName: 'Centro', siteId: 'plaza-centro', subject: 'No imprime la comanda de cocina', status: 'open', createdAt: iso(-1), updatedAt: iso(-0.1), messages: [{ id: 'm1', author: 'branch', adminId: null, body: 'Desde la mañana la impresora de cocina no responde. Ya la reiniciamos.', createdAt: iso(-1) }] }],
         releases: [{ id: 'r1', version: '1.4.0', platform: 'win-x64', filename: 'culinary-1.4.0.exe', notes: 'Corrige la impresión de comandas', status: 'ready', bytes: 48213004, sha512: 'ab'.repeat(64), createdAt: iso(-4) }, { id: 'r2', version: '1.4.0', platform: 'linux-x64', filename: 'culinary-1.4.0.deb', notes: 'Servidor de sucursal', status: 'ready', bytes: 61211004, sha512: 'cd'.repeat(64), createdAt: iso(-4) }, { id: 'r3', version: '1.5.0', platform: 'win-x64', filename: 'culinary-1.5.0.exe', notes: 'Cobro con Clip', status: 'signing', bytes: 48300000, sha512: 'ef'.repeat(64), createdAt: iso(0) }],
         publications: [{ id: 'p1', releaseId: 'r1', target: 'all', createdAt: iso(-3), withdrawnAt: null }],
+        faults: <any[]>[{ id: 'f1', licenseId: '0b6c5c1e-3f0a-4d39-9f5e-1d2a8f3c7b10', customer: 'Restaurante La Plaza', branchName: 'Centro', siteId: 'plaza-centro', source: 'api', severity: 'critical', what: 'POST /api/action: NullReferenceException', affected: 'La operación payment.add no se pudo confirmar; quien la hizo debe reconciliarla', detail: 'System.NullReferenceException\n   at MesaNexo.Api.BranchService.Action()', context: { route: '/api/action', operationId: 'op-77', exception: 'NullReferenceException' }, version: '0.3.3', platform: 'linux-x64', occurrences: 4, firstAt: iso(-1), lastAt: iso(0), status: 'open', resolvedAt: null, resolvedBy: null }],
     };
 
 }
@@ -44,6 +45,9 @@ async function mockServer(page: Page, signedIn = true, delay = 0) {
         if (match) { const l = data.licenses.find(x => x.id === match[1])!; if (match[2] === 'revoke') Object.assign(l, { status: 'revoked', revokedAt: iso(0), revokeReason: body.reason }); if (match[2] === 'renew') Object.assign(l, { expiresAt: iso(32), status: 'active' }); return json(match[2] === 'reset-activation' ? { license: l, activationCode: 'NEW22-CODE3-AFTER-RESET' } : { license: l }); }
         if (path.startsWith('/admin/v1/licenses/') && method === 'PATCH') { const l = data.licenses.find(x => path.endsWith(x.id))!; Object.assign(l, body); return json({ license: l }); }
         if (path.startsWith('/admin/v1/licenses/') && method === 'DELETE') { data.licenses = data.licenses.filter(x => !path.endsWith(x.id)); return json({ ok: true }); }
+        if (path === '/admin/v1/faults') return json({ faults: data.faults.filter(x => !url.searchParams.get('status') || x.status === url.searchParams.get('status')) });
+        if (path === '/admin/v1/faults/f1/resolve') { data.faults[0].status = 'resolved'; return json({ fault: data.faults[0] }); }
+        if (path === '/admin/v1/faults/f1/reopen') { data.faults[0].status = 'open'; return json({ fault: data.faults[0] }); }
         if (path === '/admin/v1/tickets') return json({ tickets: data.tickets.filter(t => !url.searchParams.get('status') || t.status === url.searchParams.get('status')) });
         if (path === '/admin/v1/tickets/t1') return json({ ticket: data.tickets[0] });
         if (path === '/admin/v1/tickets/t1/messages') { data.tickets[0].messages.push({ id: 'm' + Date.now(), author: 'admin', adminId: 'a1', body: body.message, createdAt: iso(0) }); data.tickets[0].status = 'answered'; return json({ ticket: data.tickets[0] }, 201); }
@@ -215,6 +219,32 @@ test('support, releases, branches and team pages', async ({ page }) => {
     await page.screenshot({ path: `${shots}/team-1440.png`, fullPage: true });
 
 });
+test('a fault says what failed, what it affected and what is needed to fix it', async ({ page }) => {
+
+    const calls = await mockServer(page);
+    await page.goto('/');
+    const nav = page.getByRole('button', { name: /^Fallos/ });
+    await expect(nav.locator('.count')).toHaveText('1');
+    await nav.click();
+    await page.getByRole('button', { name: /NullReferenceException/ }).click();
+    const panel = page.locator('.fault');
+    await expect(panel).toContainText('La operación payment.add no se pudo confirmar');
+    await expect(panel).toContainText('plaza-centro');
+    await expect(panel).toContainText('0.3.3 · linux-x64');
+    await expect(panel).toContainText('4 veces');
+    await expect(panel).toContainText('op-77');
+    await expect(panel.locator('pre')).toContainText('BranchService.Action');
+    await page.screenshot({ path: `${shots}/fallos.png` });
+    await page.getByRole('button', { name: 'Marcar resuelto' }).click();
+    await expect(page.getByText('Ninguna sucursal tiene fallos por revisar.')).toBeVisible();
+    await expect(nav.locator('.count')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Resueltos' }).click();
+    await page.getByRole('button', { name: /NullReferenceException/ }).click();
+    await page.getByRole('button', { name: 'Reabrir' }).click();
+    await expect.poll(() => calls.map(c => c.path)).toContain('/admin/v1/faults/f1/reopen');
+
+});
+
 test('lists show skeletons while they load', async ({ page }) => {
 
     await mockServer(page, true, 1500);

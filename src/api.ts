@@ -11,6 +11,7 @@ export type License = {
 };
 export type Message = { id: string; author: 'branch' | 'admin'; adminId: string | null; body: string; createdAt: string };
 export type Ticket = { id: string; licenseId: string; customer?: string; branchName?: string; siteId?: string; subject: string; status: 'open' | 'answered' | 'closed'; createdAt: string; updatedAt: string; messages?: Message[] };
+export type Fault = { id: string; licenseId: string; customer: string; branchName: string; siteId: string; source: string; severity: 'error' | 'critical'; what: string; affected: string; detail: string; context: Record<string, string>; version: string; platform: string; occurrences: number; firstAt: string; lastAt: string; status: 'open' | 'resolved'; resolvedAt: string | null; resolvedBy: string | null };
 export type Release = { id: string; version: string; platform: string; filename: string; notes: string; status: 'uploading' | 'signing' | 'ready'; bytes: number | null; sha512: string | null; createdAt: string };
 export type Publication = { id: string; releaseId: string; target: 'all' | { licenseIds: string[] }; createdAt: string; withdrawnAt: string | null };
 export type Branch = { tenantId: string; tenantName: string; branchId: string; siteId: string; slug: string; branchName: string; certificateSha256: string | null; licenseStatus: LicenseStatus; features: string[] };
@@ -166,6 +167,10 @@ export const deleteLicense = (id: string) => send<{ ok: true }>('DELETE', '/admi
 export const renewLicense = (id: string, until?: string) => send<{ license: License }>('POST', `/admin/v1/licenses/${id}/renew`, until ? { until } : {});
 export const revokeLicense = (id: string, reason: string) => send<{ license: License }>('POST', `/admin/v1/licenses/${id}/revoke`, { reason });
 export const resetActivation = (id: string, reason: string) => send<{ license: License; activationCode: string }>('POST', `/admin/v1/licenses/${id}/reset-activation`, { reason });
+
+export const faults = (status?: string) => send<{ faults: Fault[] }>('GET', '/admin/v1/faults' + (status ? '?status=' + status : ''));
+export const resolveFault = (id: string) => send<{ fault: Fault }>('POST', `/admin/v1/faults/${id}/resolve`, {});
+export const reopenFault = (id: string) => send<{ fault: Fault }>('POST', `/admin/v1/faults/${id}/reopen`, {});
 
 export const releases = () => send<{ releases: Release[] }>('GET', '/admin/v1/releases');
 export const signRelease = (id: string, manifest: string) => send<{ release: Release }>('PUT', `/admin/v1/releases/${id}/manifest`, { manifest });
