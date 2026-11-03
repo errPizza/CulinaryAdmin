@@ -95,6 +95,12 @@ label.field small { font-weight: 450; color: var(--muted); }
 .panel-head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
 .panel-head h2 { flex: 1; }
 .panel-body { padding: 16px 18px; }
+.owners-head { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 14px 24px; align-items: start; }
+.owners-head > p { grid-column: 1 / -1; }
+.owner-branches { list-style: none; padding: 0; margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.owner-branches li { display: inline-flex; gap: 8px; padding: 4px 10px; border: 1px solid var(--line-strong); border-radius: 7px; font-size: 13px; }
+.owner-branches b { color: var(--muted); font-weight: 600; }
+@media (max-width: 720px) { .owners-head { grid-template-columns: minmax(0, 1fr); } }
 .empty { padding: 44px 20px; text-align: center; color: var(--muted); display: flex; flex-direction: column; gap: 10px; align-items: center; }
 .empty h3 { font-size: 15px; }
 table { width: 100%; border-collapse: collapse; }

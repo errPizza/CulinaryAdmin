@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Bug, KeyRound, LifeBuoy, LogOut, Network, PackageOpen, ShieldCheck } from 'lucide-react';
+import { Bug, ChartColumn, KeyRound, LifeBuoy, LogOut, Network, PackageOpen, ShieldCheck } from 'lucide-react';
 import * as api from './api';
 import { Faults } from './faults';
 import { Gate } from './gate';
 import { Licenses } from './licenses';
+import { Owners } from './owners';
 import { Releases } from './releases';
 import { Support } from './support';
 import { Branches, Team } from './team';
 import { ToastProvider, daysLeft, useLoad } from './ui';
 
-const PAGES = [['licenses', 'Licencias', KeyRound], ['releases', 'Versiones', PackageOpen], ['support', 'Soporte', LifeBuoy], ['faults', 'Fallos', Bug], ['branches', 'Sucursales', Network], ['team', 'Equipo y seguridad', ShieldCheck]] as const;
+const PAGES = [['licenses', 'Licencias', KeyRound], ['releases', 'Versiones', PackageOpen], ['support', 'Soporte', LifeBuoy], ['faults', 'Fallos', Bug], ['branches', 'Sucursales', Network], ['owners', 'Panel del dueño', ChartColumn], ['team', 'Equipo y seguridad', ShieldCheck]] as const;
 type Page = typeof PAGES[number][0];
 
 export function App() {
@@ -55,6 +56,7 @@ function Shell({ user, signOut, signedOut }: { user: string; signOut: () => void
             {page === 'support' && <Support changed={() => void open.reload()} />}
             {page === 'faults' && <Faults changed={() => void failing.reload()} />}
             {page === 'branches' && <Branches />}
+            {page === 'owners' && <Owners me={user} />}
             {page === 'team' && <Team me={user} signedOut={signedOut} />}
 
         </main>

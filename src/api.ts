@@ -210,3 +210,9 @@ export const ticket = (id: string) => send<{ ticket: Ticket }>('GET', '/admin/v1
 export const reply = (id: string, message: string) => send<{ ticket: Ticket }>('POST', `/admin/v1/tickets/${id}/messages`, { message });
 export const closeTicket = (id: string) => send<{ ticket: Ticket }>('POST', `/admin/v1/tickets/${id}/close`, {});
 export const registry = () => send<{ branches: Branch[] }>('GET', '/admin/v1/registry');
+export type OwnerRole = 'owner' | 'manager';
+export type OwnerAccount = { id: string; email: string; role: OwnerRole; active: boolean; createdAt: string; licenseIds: string[] };
+export const ROLES: Record<OwnerRole, string> = { owner: 'Dueño', manager: 'Gerente' };
+export const ownerAccounts = (tenantId: string) => send<{ accounts: OwnerAccount[] }>('GET', '/admin/v1/owner-accounts?tenantId=' + encodeURIComponent(tenantId));
+export const inviteOwner = (username: string, input: { tenantId: string; email: string; role: OwnerRole; licenseIds: string[] }) => signed<{ code: string; expiresAt: string }>('POST', '/admin/v1/owner-invites', username, input);
+export const removeOwner = (username: string, id: string) => signed<{ ok: true }>('DELETE', '/admin/v1/owner-accounts/' + id, username, {});

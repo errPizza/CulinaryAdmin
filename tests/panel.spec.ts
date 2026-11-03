@@ -22,6 +22,7 @@ function fixtures() {
         ],
         tickets: <any[]>[{ id: 't1', licenseId: '0b6c5c1e-3f0a-4d39-9f5e-1d2a8f3c7b10', customer: 'Restaurante La Plaza', branchName: 'Centro', siteId: 'plaza-centro', subject: 'No imprime la comanda de cocina', status: 'open', createdAt: iso(-1), updatedAt: iso(-0.1), messages: [{ id: 'm1', author: 'branch', adminId: null, body: 'Desde la mañana la impresora de cocina no responde. Ya la reiniciamos.', createdAt: iso(-1) }] }],
         releases: [{ id: 'r1', version: '1.4.0', platform: 'win-x64', filename: 'culinary-1.4.0.exe', notes: 'Corrige la impresión de comandas', status: 'ready', bytes: 48213004, sha512: 'ab'.repeat(64), createdAt: iso(-4) }, { id: 'r2', version: '1.4.0', platform: 'linux-x64', filename: 'culinary-1.4.0.deb', notes: 'Servidor de sucursal', status: 'ready', bytes: 61211004, sha512: 'cd'.repeat(64), createdAt: iso(-4) }, { id: 'r3', version: '1.5.0', platform: 'win-x64', filename: 'culinary-1.5.0.exe', notes: 'Cobro con Clip', status: 'signing', bytes: 48300000, sha512: 'ef'.repeat(64), createdAt: iso(0) }],
+        owners: <any[]>[{ id: 'o1', email: 'dueno@laplaza.mx', role: 'owner', active: true, createdAt: iso(-10), licenseIds: [] }],
         publications: [{ id: 'p1', releaseId: 'r1', target: 'all', createdAt: iso(-3), withdrawnAt: null }],
         faults: <any[]>[{ id: 'f1', licenseId: '0b6c5c1e-3f0a-4d39-9f5e-1d2a8f3c7b10', customer: 'Restaurante La Plaza', branchName: 'Centro', siteId: 'plaza-centro', source: 'api', severity: 'critical', what: 'POST /api/action: NullReferenceException', affected: 'La operación payment.add no se pudo confirmar; quien la hizo debe reconciliarla', detail: 'System.NullReferenceException\n   at MesaNexo.Api.BranchService.Action()', context: { route: '/api/action', operationId: 'op-77', exception: 'NullReferenceException' }, version: '0.3.3', platform: 'linux-x64', occurrences: 4, firstAt: iso(-1), lastAt: iso(0), status: 'open', resolvedAt: null, resolvedBy: null }],
     };
@@ -62,6 +63,10 @@ async function mockServer(page: Page, signedIn = true, delay = 0) {
         if (path === '/admin/v1/enroll') return json({ adminId: 'a1', totp: { secret: 'JBSWY3DPEHPK3PXP', uri: 'otpauth://totp/CulinaryAdmin:proveedor?secret=JBSWY3DPEHPK3PXP' } }, 201);
         if (path === '/admin/v1/enroll/confirm') return json({ adminId: 'a1', username: 'proveedor' });
         if (path === '/admin/v1/password') return json({ ok: true });
+        if (path === '/admin/v1/login') return json({ token: 'fixture-token', expiresAt: iso(1), admin: { id: 'a1', username: 'proveedor' } });
+        if (path === '/admin/v1/owner-accounts' && method === 'GET') return json({ accounts: url.searchParams.get('tenantId') === 'grupo-plaza' ? data.owners : [] });
+        if (path.startsWith('/admin/v1/owner-accounts/') && method === 'DELETE') { data.owners = data.owners.filter(o => !path.endsWith(o.id)); return json({ ok: true }); }
+        if (path === '/admin/v1/owner-invites') { data.owners.push({ id: 'o' + calls.length, email: body.email, role: body.role, active: false, createdAt: iso(0), licenseIds: body.licenseIds }); return json({ code: 'PLAZA-GEREN-TE123-ALTA9', expiresAt: iso(7) }, 201); }
         return json({ error: { code: 'not_found', message: 'No existe' } }, 404);
 
     });
@@ -295,5 +300,48 @@ test('sign-in and phone layout fit without horizontal scroll', async ({ page }) 
     await expect(page.getByRole('heading', { name: 'Licencias', level: 1 })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: `${shots}/licenses-390.png`, fullPage: true });
+
+});
+test('owner panel: accounts per business, signed invitation for a manager and removal', async ({ page }) => {
+
+    const calls = await mockServer(page, false);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    // The device key the signed actions need is created by enrolling this browser, as on a real computer.
+    await page.getByLabel('Código de alta o invitación').fill('codigo-de-alta-de-prueba-123');
+    await page.getByLabel(/^Usuario/).fill('proveedor');
+    await page.getByLabel(/^Contraseña/).fill('contraseña muy larga 123');
+    await page.getByLabel(/^Repite la contraseña/).fill('contraseña muy larga 123');
+    await page.getByRole('button', { name: 'Dar de alta' }).click();
+    await page.getByLabel('Código que muestra la app').fill('123456');
+    await page.getByRole('button', { name: 'Confirmar' }).click();
+    await page.getByLabel('Contraseña', { exact: true }).fill('contraseña muy larga 123');
+    await page.getByLabel('Código de 6 dígitos').fill('234567');
+    await page.getByRole('button', { name: 'Entrar' }).click();
+    await nav(page, 'Panel del dueño');
+    await page.getByLabel('Negocio').selectOption({ label: 'Restaurante La Plaza' });
+    await expect(page.getByRole('cell', { name: 'dueno@laplaza.mx' })).toBeVisible();
+    await expect(page.locator('.owner-branches')).toContainText('Satélite');
+    await page.getByRole('button', { name: 'Invitar' }).click();
+    await page.getByLabel(/^Correo/).fill('gerente@laplaza.mx');
+    await page.getByRole('group', { name: 'Rol' }).getByRole('button', { name: 'Gerente' }).click();
+    await page.getByRole('button', { name: 'Crear invitación' }).click();
+    await expect(page.getByRole('alert')).toContainText('al menos una sucursal');
+    await page.getByLabel('Centro').check();
+    await page.getByRole('button', { name: 'Crear invitación' }).click();
+    await expect(page.getByText('PLAZA-GEREN-TE123-ALTA9')).toBeVisible();
+    const invite = calls.find(c => c.path === '/admin/v1/owner-invites')!;
+    expect(invite.body).toEqual({ tenantId: 'grupo-plaza', email: 'gerente@laplaza.mx', role: 'manager', licenseIds: ['0b6c5c1e-3f0a-4d39-9f5e-1d2a8f3c7b10'] });
+    expect(calls[calls.indexOf(invite) - 1]?.path).toBe('/admin/v1/challenges');
+    await page.screenshot({ path: `${shots}/owners-invite-1440.png` });
+    await page.getByRole('button', { name: 'Listo' }).click();
+    await expect(page.getByRole('row', { name: /gerente@laplaza.mx/ })).toContainText('Centro');
+    await page.getByRole('row', { name: /gerente@laplaza.mx/ }).getByRole('button', { name: 'Borrar' }).click();
+    await page.getByRole('button', { name: 'Borrar cuenta' }).click();
+    await expect(page.getByRole('row', { name: /gerente@laplaza.mx/ })).toHaveCount(0);
+    expect(calls.some(c => c.method === 'DELETE' && c.path.startsWith('/admin/v1/owner-accounts/'))).toBe(true);
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: `${shots}/owners-390.png`, fullPage: true });
 
 });
