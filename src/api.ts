@@ -23,7 +23,8 @@ export type Tier = 'lite' | 'pro';
 export type Addon = 'mobileOrdering' | 'deliveryHub' | 'webOrdering';
 export const TIERS: Record<Tier, { label: string; terminals: number }> = { lite: { label: 'Lite', terminals: 2 }, pro: { label: 'Pro', terminals: 10 } };
 export const ADDONS: Record<Addon, string> = { mobileOrdering: 'Comanderos móviles', deliveryHub: 'Delivery Hub', webOrdering: 'Web propia de pedidos' };
-export const COMBOS: { id: string; label: string; tier: Tier; addons: Addon[] }[] = [
+// Keep in step with COMBOS in CulinaryServer src/catalog.ts: the server prices a monthly license that matches one.
+export const COMBOS: { id: 'pyme' | 'delivery'; label: string; tier: Tier; addons: Addon[] }[] = [
     { id: 'pyme', label: 'Combo PYME Digital', tier: 'lite', addons: ['mobileOrdering'] },
     { id: 'delivery', label: 'Combo Delivery Pro', tier: 'pro', addons: ['deliveryHub', 'webOrdering'] }
 ];
@@ -156,15 +157,15 @@ export const me = () => send<{ admin: { id: string; username: string } }>('GET',
 export const admins = () => send<{ admins: Admin[] }>('GET', '/admin/v1/admins');
 export const invite = (username: string) => signed<{ code: string; expiresAt: string }>('POST', '/admin/v1/invites', username, {});
 export const removeAdmin = (username: string, id: string) => signed<{ ok: true }>('DELETE', '/admin/v1/admins/' + id, username, {});
-export const rootKey = () => send<{ kid: string; alg: string; publicKey: string; spki: string; pem: string }>('GET', '/admin/v1/root-key');
+export const rootKey = () => send<{ kid: string; alg: string; publicKey: string; spki: string; pem: string; licenseIntermediate?: { kid: string; generation: number; notBefore: string; expiresAt: string } | null }>('GET', '/admin/v1/root-key');
 export const audit = (before?: string) => send<{ entries: AuditEntry[] }>('GET', '/admin/v1/audit' + (before ? '?before=' + encodeURIComponent(before) : ''));
 
-export type LicenseInput = { customer: string; branchName: string; siteId: string; tenantId?: string; plan: Plan; tier: Tier; addons: Addon[]; trialDays?: number; features: string[]; limits: { maxUsers: number; maxTables: number; maxTerminals?: number } };
+export type LicenseInput = { customer: string; branchName: string; siteId: string; tenantId?: string; plan: Plan; tier: Tier; addons: Addon[]; trialDays?: number; features: string[]; limits: { maxUsers: number; maxTables: number; maxTerminals?: number }; charge?: number };
 export const licenses = () => send<{ licenses: License[] }>('GET', '/admin/v1/licenses');
 export const createLicense = (input: LicenseInput) => send<{ license: License; activationCode: string }>('POST', '/admin/v1/licenses', input);
 export const updateLicense = (id: string, patch: Partial<Omit<LicenseInput, 'tenantId'>> & { expiresAt?: string }) => send<{ license: License }>('PATCH', '/admin/v1/licenses/' + id, patch);
 export const deleteLicense = (id: string) => send<{ ok: true }>('DELETE', '/admin/v1/licenses/' + id);
-export const renewLicense = (id: string, until?: string) => send<{ license: License }>('POST', `/admin/v1/licenses/${id}/renew`, until ? { until } : {});
+export const renewLicense = (id: string, until?: string, charge?: number) => send<{ license: License }>('POST', `/admin/v1/licenses/${id}/renew`, { ...(until ? { until } : {}), ...(charge !== undefined ? { charge } : {}) });
 export const revokeLicense = (id: string, reason: string) => send<{ license: License }>('POST', `/admin/v1/licenses/${id}/revoke`, { reason });
 export const resetActivation = (id: string, reason: string) => send<{ license: License; activationCode: string }>('POST', `/admin/v1/licenses/${id}/reset-activation`, { reason });
 
@@ -216,3 +217,33 @@ export const ROLES: Record<OwnerRole, string> = { owner: 'Dueño', manager: 'Ger
 export const ownerAccounts = (tenantId: string) => send<{ accounts: OwnerAccount[] }>('GET', '/admin/v1/owner-accounts?tenantId=' + encodeURIComponent(tenantId));
 export const inviteOwner = (username: string, input: { tenantId: string; email: string; role: OwnerRole; licenseIds: string[] }) => signed<{ code: string; expiresAt: string }>('POST', '/admin/v1/owner-invites', username, input);
 export const removeOwner = (username: string, id: string) => signed<{ ok: true }>('DELETE', '/admin/v1/owner-accounts/' + id, username, {});
+
+// Money is in centavos of MXN without IVA, as CulinaryServer stores it.
+export type TierPrices = { monthly: number; annual: number; permanent: number };
+export type Prices = { tiers: Record<Tier, TierPrices>; addons: Record<Addon, number>; combos: Record<'pyme' | 'delivery', number> };
+export type RevenueMonth = { month: string; lite: number; pro: number; addons: number; permanent: number; total: number };
+export type Revenue = {
+    currency: 'MXN'; timeZone: string; pricesAt: string | null; months: RevenueMonth[];
+    recurring: { total: number; payingLicenses: number; perLicense: number; mix: { liteMonthly: number; liteAnnual: number; proMonthly: number; proAnnual: number; addons: number } };
+    collected: { thisMonth: number; lastMonth: number };
+    atRisk: { amount: number; licenses: { id: string; customer: string; branchName: string; expiresAt: string; amount: number }[] };
+    top: { tenantId: string; customer: string; branches: number; monthly: number }[];
+    perLicense: Record<string, { monthly: number; lastCharge: { at: string; kind: string; amount: number } | null }>;
+};
+export const prices = () => send<{ prices: Prices | null; updatedAt: string | null }>('GET', '/admin/v1/prices');
+export const savePrices = (value: Prices) => send<{ prices: Prices; updatedAt: string }>('PUT', '/admin/v1/prices', value);
+export const revenue = () => send<Revenue>('GET', '/admin/v1/revenue');
+
+/** The same list price CulinaryServer charges for one period (src/revenue.ts periodPrice), to prefill the amount. */
+export function periodPrice(p: Prices, plan: Plan, tier: Tier, addons: Addon[]): number | null {
+
+    const monthlyAddons = addons.reduce((sum, a) => sum + p.addons[a], 0);
+
+    if (plan === 'trial') return null;
+    if (plan === 'permanent') return p.tiers[tier].permanent;
+    if (plan === 'annual') return p.tiers[tier].annual + monthlyAddons * 12;
+
+    const combo = COMBOS.find(c => c.tier === tier && c.addons.length === addons.length && c.addons.every(a => addons.includes(a)));
+
+    return combo ? p.combos[combo.id] : p.tiers[tier].monthly + monthlyAddons;
+}

@@ -37,7 +37,7 @@ The only place licenses are minted. Each license is signed in CulinaryServer by 
 - Session lasts 8 hours; five bad attempts lock an account 15 minutes.
 - Creating invitations and deleting admins needs a fresh device signature.
 - The panel's origin must be listed in the Worker's ADMIN_ORIGINS.
-- Prices are not managed here.
+- Prices: the provider sets the list price of each tier per period, the add-ons and the combos (centavos of MXN without IVA). CulinaryServer records a charge when a paid license is sold, renewed or moved to another plan, at list price or at the amount typed in; Ganancias shows recurring revenue, what was collected per month, what is at risk and who pays the most. Collecting the money itself happens outside the panel.
 
 ## Brand Commitments
 

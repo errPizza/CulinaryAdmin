@@ -24,8 +24,16 @@ function fixtures() {
         releases: [{ id: 'r1', version: '1.4.0', platform: 'win-x64', filename: 'culinary-1.4.0.exe', notes: 'Corrige la impresión de comandas', status: 'ready', bytes: 48213004, sha512: 'ab'.repeat(64), createdAt: iso(-4) }, { id: 'r2', version: '1.4.0', platform: 'linux-x64', filename: 'culinary-1.4.0.deb', notes: 'Servidor de sucursal', status: 'ready', bytes: 61211004, sha512: 'cd'.repeat(64), createdAt: iso(-4) }, { id: 'r3', version: '1.5.0', platform: 'win-x64', filename: 'culinary-1.5.0.exe', notes: 'Cobro con Clip', status: 'signing', bytes: 48300000, sha512: 'ef'.repeat(64), createdAt: iso(0) }],
         owners: <any[]>[{ id: 'o1', email: 'dueno@laplaza.mx', role: 'owner', active: true, createdAt: iso(-10), licenseIds: [] }],
         publications: [{ id: 'p1', releaseId: 'r1', target: 'all', createdAt: iso(-3), withdrawnAt: null }],
+        prices: <any>null,
+        revenue: revenue(),
         faults: <any[]>[{ id: 'f1', licenseId: '0b6c5c1e-3f0a-4d39-9f5e-1d2a8f3c7b10', customer: 'Restaurante La Plaza', branchName: 'Centro', siteId: 'plaza-centro', source: 'api', severity: 'critical', what: 'POST /api/action: NullReferenceException', affected: 'La operación payment.add no se pudo confirmar; quien la hizo debe reconciliarla', detail: 'System.NullReferenceException\n   at MesaNexo.Api.BranchService.Action()', context: { route: '/api/action', operationId: 'op-77', exception: 'NullReferenceException' }, version: '0.3.3', platform: 'linux-x64', occurrences: 4, firstAt: iso(-1), lastAt: iso(0), status: 'open', resolvedAt: null, resolvedBy: null }],
     };
+
+}
+function revenue() {
+
+    const months = Array.from({ length: 12 }, (_, i) => { const d = new Date(); d.setDate(15); d.setMonth(d.getMonth() - 11 + i); const lite = 1_420_000 + i * 62_000, pro = 810_000 + i * 140_000, addons = 120_000 + i * 40_000, permanent = i === 4 ? 4_490_000 : i === 9 ? 2_490_000 : 0; return { month: d.toISOString().slice(0, 7), lite, pro, addons, permanent, total: lite + pro + addons + permanent }; });
+    return { currency: 'MXN', timeZone: 'America/Mexico_City', pricesAt: iso(-20), months, recurring: { total: 5_002_000, payingLicenses: 5, perLicense: 1_000_400, mix: { liteMonthly: 1_798_000, liteAnnual: 749_000, proMonthly: 0, proAnnual: 1_408_000, addons: 1_047_000 } }, collected: { thisMonth: months[11].total, lastMonth: months[10].total }, atRisk: { amount: 179_800, licenses: [{ id: '0b6c5c1e-3f0a-4d39-9f5e-1d2a8f3c7b10', customer: 'Restaurante La Plaza', branchName: 'Centro', expiresAt: iso(2), amount: 89_900 }, { id: '03f6b124-0a1b-4c2d-9e3f-5a6b7c8d9e0f', customer: 'Cantina La 20', branchName: 'Centro', expiresAt: iso(25), amount: 89_900 }] }, top: [{ tenantId: 'grupo-plaza', customer: 'Restaurante La Plaza', branches: 2, monthly: 2_340_000 }, { tenantId: 'grupo-napoles', customer: 'Pizzería Nápoles', branches: 1, monthly: 1_180_000 }, { tenantId: 'grupo-la20', customer: 'Cantina La 20', branches: 1, monthly: 899_000 }], perLicense: { '0b6c5c1e-3f0a-4d39-9f5e-1d2a8f3c7b10': { monthly: 89_900, lastCharge: { at: iso(-28), kind: 'renewal', amount: 89_900 } }, '7d2e11a0-1b2c-4d5e-8f90-a1b2c3d4e5f6': { monthly: 74_917, lastCharge: { at: iso(-135), kind: 'sale', amount: 899_000 } } } };
 
 }
 async function mockServer(page: Page, signedIn = true, delay = 0) {
@@ -59,6 +67,9 @@ async function mockServer(page: Page, signedIn = true, delay = 0) {
         if (path === '/admin/v1/admins') return json({ admins: [{ id: 'a1', username: 'proveedor', deviceName: 'Oficina', keyAlg: 'Ed25519', active: true, createdAt: iso(-90) }, { id: 'a2', username: 'soporte', deviceName: 'Laptop de soporte', keyAlg: 'ES256', active: true, createdAt: iso(-20) }] });
         if (path === '/admin/v1/root-key') return json({ kid: 'mXGQnb4LVMQOMwa3', alg: 'EdDSA', publicKey: 'x', spki: 'x', pem: '-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAGZgc2PccPv/TKOhGCEzfIzy01VFqUgJSJE/dmri8zg8=\n-----END PUBLIC KEY-----\n' });
         if (path === '/admin/v1/audit') return json({ entries: [{ id: 3, at: iso(-0.2), adminId: 'a1', action: 'license.renew', target: '0b6c5c1e-3f0a', detail: { until: iso(30).slice(0, 10), plan: 'monthly' } }, { id: 2, at: iso(-1), adminId: 'a2', action: 'ticket.reply', target: 't1', detail: null }, { id: 1, at: iso(-2), adminId: null, action: 'license.create', target: null, detail: { features: ['printing', 'reservations'], limits: { maxUsers: 15 } } }] });
+        if (path === '/admin/v1/prices' && method === 'GET') return json({ prices: data.prices, updatedAt: data.prices ? iso(-1) : null });
+        if (path === '/admin/v1/prices' && method === 'PUT') { data.prices = body; return json({ prices: body, updatedAt: iso(0) }); }
+        if (path === '/admin/v1/revenue') return json(data.revenue);
         if (path === '/admin/v1/challenges') return json({ nonce: 'n' + calls.length });
         if (path === '/admin/v1/enroll') return json({ adminId: 'a1', totp: { secret: 'JBSWY3DPEHPK3PXP', uri: 'otpauth://totp/CulinaryAdmin:proveedor?secret=JBSWY3DPEHPK3PXP' } }, 201);
         if (path === '/admin/v1/enroll/confirm') return json({ adminId: 'a1', username: 'proveedor' });
@@ -74,34 +85,57 @@ async function mockServer(page: Page, signedIn = true, delay = 0) {
     return calls;
 
 }
-const nav = (page: Page, name: string) => page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name }).click();
+const rail = (page: Page) => page.getByRole('navigation', { name: 'Secciones' });
+const nav = (page: Page, name: string) => rail(page).getByRole('button', { name }).click();
+const row = (page: Page, name: string | RegExp) => page.getByRole('row', { name });
+const detail = (page: Page) => page.getByRole('complementary', { name: /^Licencia de/ });
 
-test('licenses: rack, due strip, filters, table and the license drawer', async ({ page }) => {
+test('summary: headline numbers, urgent licenses and the way into each section', async ({ page }) => {
 
     const errors: string[] = [];
     page.on('pageerror', e => errors.push(e.message));
-    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.setViewportSize({ width: 1600, height: 1000 });
     await mockServer(page);
     await page.goto('/');
+    await expect(page.getByRole('heading', { name: '¡Bienvenido, proveedor!', level: 1 })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Licencias activas/ })).toContainText('5');
+    await expect(page.getByRole('button', { name: /Ingreso recurrente al mes/ })).toContainText('$50');
+    const urgent = page.getByRole('region', { name: 'Licencias' });
+    await expect(urgent.getByRole('row').nth(1)).toContainText('Café Ámbar');
+    await expect(urgent.getByRole('row').nth(2)).toContainText('Vence en 2 días');
+    await expect(page.getByText('Última actividad')).toBeVisible();
+    await page.screenshot({ path: `${shots}/summary-1600.png` });
+    await urgent.getByRole('row').nth(2).getByRole('button', { name: 'Ver' }).click();
     await expect(page.getByRole('heading', { name: 'Licencias', level: 1 })).toBeVisible();
-    const due = page.getByRole('region', { name: 'Vencen pronto' });
-    await expect(due.locator('.due-when').first()).toContainText('venció hace 2 d');
-    await expect(due).toContainText('Restaurante La Plaza · Centro');
-    await expect(page.locator('.hook.active')).toHaveCount(5);
-    await expect(page.locator('.hook.selected')).toHaveCount(0);
-    await page.screenshot({ path: `${shots}/licenses-rack-1440.png` });
-    await page.getByRole('group', { name: 'Filtrar por estado' }).getByRole('button', { name: /Sin activar/ }).click();
-    await expect(page.locator('.plate')).toHaveCount(1);
-    await page.getByRole('group', { name: 'Filtrar por estado' }).getByRole('button', { name: /Todas/ }).click();
-    await page.getByRole('button', { name: 'Tabla' }).click();
+    await expect(detail(page)).toContainText('Restaurante La Plaza');
+    expect(errors).toEqual([]);
+
+});
+test('licenses: headline filters, table, search and the license detail', async ({ page }) => {
+
+    const errors: string[] = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.setViewportSize({ width: 1600, height: 1000 });
+    await mockServer(page);
+    await page.goto('/');
+    await nav(page, 'Licencias');
+    await expect(page.getByRole('heading', { name: 'Licencias', level: 1 })).toBeVisible();
     await expect(page.getByRole('row')).toHaveCount(9);
-    await page.screenshot({ path: `${shots}/licenses-table-1440.png` });
-    await page.getByRole('row', { name: /Pizzería Nápoles/ }).click();
-    const drawer = page.getByRole('complementary', { name: 'Licencia de Pizzería Nápoles' });
-    await expect(drawer.getByText('Sin vencimiento')).toBeVisible();
-    await page.waitForTimeout(600);
-    await expect(drawer.getByRole('button', { name: 'Renovar' })).toBeDisabled();
-    await page.screenshot({ path: `${shots}/license-drawer-1440.png` });
+    await page.locator('.kpi', { hasText: 'Sin activar' }).click();
+    await expect(page.getByRole('row')).toHaveCount(2);
+    await page.getByRole('group', { name: 'Filtrar por estado' }).getByRole('button', { name: /Por vencer/ }).click();
+    await expect(page.getByRole('row')).toHaveCount(3);
+    await page.getByRole('group', { name: 'Filtrar por estado' }).getByRole('button', { name: /Todas/ }).click();
+    await page.getByLabel('Buscar licencias').fill('plaza');
+    await expect(page.getByRole('row')).toHaveCount(3);
+    await page.getByLabel('Buscar licencias').fill('');
+    await row(page, /Satélite/).click();
+    await expect(detail(page)).toContainText('$749.17');
+    await expect(detail(page)).toContainText('$8,990');
+    await row(page, /Pizzería Nápoles/).click();
+    await expect(detail(page).getByText('Sin vencimiento')).toBeVisible();
+    await expect(detail(page).getByRole('button', { name: 'Renovar' })).toBeDisabled();
+    await page.screenshot({ path: `${shots}/licenses-1600.png` });
     expect(errors).toEqual([]);
 
 });
@@ -137,7 +171,8 @@ test('revoking asks for the site ID; renewing and releasing call the API', async
 
     const calls = await mockServer(page);
     await page.goto('/');
-    await page.locator('.plate', { hasText: 'Taquería Don Beto' }).click();
+    await nav(page, 'Licencias');
+    await row(page, /Taquería Don Beto/).click();
     await page.getByRole('button', { name: 'Renovar' }).click();
     await page.getByRole('dialog', { name: 'Renovar licencia' }).getByRole('button', { name: 'Renovar' }).click();
     await expect.poll(() => calls.some(c => c.path.endsWith('/renew'))).toBe(true);
@@ -162,12 +197,13 @@ test('the site ID changes only while no machine holds the license', async ({ pag
 
     const calls = await mockServer(page);
     await page.goto('/');
-    await page.locator('.plate', { hasText: 'Taquería Don Beto' }).click();
+    await nav(page, 'Licencias');
+    await row(page, /Taquería Don Beto/).click();
     await page.getByRole('button', { name: 'Editar licencia' }).click();
     await expect(page.getByRole('dialog', { name: 'Editar licencia' }).getByLabel(/siteId/)).toBeDisabled();
     await page.getByRole('button', { name: 'Cancelar' }).click();
-    await page.locator('.drawer header').getByRole('button', { name: 'Cerrar' }).click();
-    await page.locator('.plate', { hasText: 'Mariscos El Faro' }).click();
+    await detail(page).getByRole('button', { name: 'Cerrar' }).click();
+    await row(page, /Mariscos El Faro/).click();
     await page.getByRole('button', { name: 'Editar licencia' }).click();
     const edit = page.getByRole('dialog', { name: 'Editar licencia' });
     await edit.getByLabel(/siteId/).fill('faro-boca-2');
@@ -179,7 +215,8 @@ test('deleting asks for the site ID and removes the license from the panel', asy
 
     const calls = await mockServer(page);
     await page.goto('/');
-    await page.locator('.plate', { hasText: 'Fonda Doña Lupe' }).click();
+    await nav(page, 'Licencias');
+    await row(page, /Fonda Doña Lupe/).click();
     await page.getByRole('button', { name: 'Eliminar' }).click();
     const dialog = page.getByRole('dialog', { name: 'Eliminar licencia' });
     const go = dialog.getByRole('button', { name: 'Eliminar' });
@@ -188,7 +225,7 @@ test('deleting asks for the site ID and removes the license from the panel', asy
     await page.screenshot({ path: `${shots}/license-delete-1440.png` });
     await go.click();
     await expect.poll(() => calls.some(c => c.method === 'DELETE' && c.path.endsWith('f2e5a013-9f0a-4b1c-8d2e-4f5a6b7c8d9e'))).toBe(true);
-    await expect(page.locator('.plate', { hasText: 'Fonda Doña Lupe' })).toHaveCount(0);
+    await expect(row(page, /Fonda Doña Lupe/)).toHaveCount(0);
 
 });
 test('support, releases, branches and team pages', async ({ page }) => {
@@ -196,7 +233,7 @@ test('support, releases, branches and team pages', async ({ page }) => {
     const calls = await mockServer(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
-    await expect(page.getByRole('button', { name: /Soporte/ }).locator('.count')).toHaveText('1');
+    await expect(rail(page).getByRole('button', { name: /Soporte/ }).locator('.count')).toHaveText('1');
     await nav(page, 'Soporte');
     await page.getByRole('button', { name: /No imprime la comanda/ }).click();
     await page.getByLabel('Respuesta').fill('Revisa que el servicio de impresión esté activo en Configuración.');
@@ -205,7 +242,7 @@ test('support, releases, branches and team pages', async ({ page }) => {
     await page.screenshot({ path: `${shots}/support-1440.png` });
     await nav(page, 'Versiones');
     await expect(page.getByRole('cell', { name: 'Todas las licencias' })).toBeVisible();
-    await expect(page.getByText('Falta firma')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Paquetes' }).getByText('Falta firma')).toBeVisible();
     await page.getByRole('button', { name: 'Firmar' }).click();
     await expect(page.locator('.station-command').first()).toContainText('--release-id r3 --version 1.5.0 --platform win-x64');
     await page.getByLabel('Firma que imprimió la estación').fill('eyJhbGciOiJFZERTQSJ9.eyJ2IjoxfQ.firma-de-la-estacion-de-prueba');
@@ -214,9 +251,9 @@ test('support, releases, branches and team pages', async ({ page }) => {
     expect(calls.some(c => c.method === 'PUT' && c.path === '/admin/v1/releases/r3/manifest')).toBe(true);
     await page.screenshot({ path: `${shots}/releases-1440.png` });
     await nav(page, 'Sucursales');
-    await page.getByRole('button', { name: 'Datos de aprovisionamiento' }).click();
+    await row(page, /plaza-centro/).click();
     await expect(page.locator('pre.snippet')).toContainText('"siteId": "plaza-centro"');
-    await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
+    await page.screenshot({ path: `${shots}/branches-1440.png` });
     await nav(page, 'Equipo y seguridad');
     await expect(page.getByText('kid mXGQnb4LVMQOMwa3')).toBeVisible();
     await expect(page.getByRole('cell', { name: /features: printing, reservations · limits: maxUsers: 15/ })).toBeVisible();
@@ -228,10 +265,10 @@ test('a fault says what failed, what it affected and what is needed to fix it', 
 
     const calls = await mockServer(page);
     await page.goto('/');
-    const nav = page.getByRole('button', { name: /^Fallos/ });
+    const nav = rail(page).getByRole('button', { name: /^Fallos/ });
     await expect(nav.locator('.count')).toHaveText('1');
     await nav.click();
-    await page.getByRole('button', { name: /NullReferenceException/ }).click();
+    await row(page, /NullReferenceException/).click();
     const panel = page.locator('.fault');
     await expect(panel).toContainText('La operación payment.add no se pudo confirmar');
     await expect(panel).toContainText('plaza-centro');
@@ -244,7 +281,7 @@ test('a fault says what failed, what it affected and what is needed to fix it', 
     await expect(page.getByText('Ninguna sucursal tiene fallos por revisar.')).toBeVisible();
     await expect(nav.locator('.count')).toHaveCount(0);
     await page.getByRole('button', { name: 'Resueltos' }).click();
-    await page.getByRole('button', { name: /NullReferenceException/ }).click();
+    await row(page, /NullReferenceException/).click();
     await page.getByRole('button', { name: 'Reabrir' }).click();
     await expect.poll(() => calls.map(c => c.path)).toContain('/admin/v1/faults/f1/reopen');
 
@@ -254,10 +291,11 @@ test('lists show skeletons while they load', async ({ page }) => {
 
     await mockServer(page, true, 1500);
     await page.goto('/');
-    await expect(page.locator('.sk-plate').first()).toBeVisible();
+    await nav(page, 'Licencias');
+    await expect(page.locator('.sk-row').first()).toBeVisible();
     await page.screenshot({ path: `${shots}/licenses-loading-1440.png` });
-    await expect(page.locator('.plate').first()).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('.sk-plate')).toHaveCount(0);
+    await expect(row(page, /Pizzería Nápoles/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('.sk-row')).toHaveCount(0);
     await nav(page, 'Equipo y seguridad');
     await expect(page.locator('.sk-row').first()).toBeVisible();
     await expect(page.getByText('kid mXGQnb4LVMQOMwa3')).toBeVisible({ timeout: 10_000 });
@@ -297,9 +335,15 @@ test('sign-in and phone layout fit without horizontal scroll', async ({ page }) 
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await mockServer(page);
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Licencias', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Bienvenido/, level: 1 })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await page.screenshot({ path: `${shots}/licenses-390.png`, fullPage: true });
+    await page.screenshot({ path: `${shots}/summary-390.png`, fullPage: true });
+    for (const name of ['Licencias', 'Ganancias', 'Versiones', 'Soporte', 'Fallos', 'Sucursales', 'Equipo y seguridad']) {
+        await nav(page, name);
+        await expect(page.getByRole('heading', { name, level: 1 })).toBeVisible();
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), name).toBe(true);
+    }
+    await page.screenshot({ path: `${shots}/team-390.png`, fullPage: true });
 
 });
 test('owner panel: accounts per business, signed invitation for a manager and removal', async ({ page }) => {
@@ -319,7 +363,7 @@ test('owner panel: accounts per business, signed invitation for a manager and re
     await page.getByLabel('Código de 6 dígitos').fill('234567');
     await page.getByRole('button', { name: 'Entrar' }).click();
     await nav(page, 'Panel del dueño');
-    await page.getByLabel('Negocio').selectOption({ label: 'Restaurante La Plaza' });
+    await page.getByRole('combobox', { name: 'Negocio' }).selectOption({ label: 'Restaurante La Plaza' });
     await expect(page.getByRole('cell', { name: 'dueno@laplaza.mx' })).toBeVisible();
     await expect(page.locator('.owner-branches')).toContainText('Satélite');
     await page.getByRole('button', { name: 'Invitar' }).click();
@@ -343,5 +387,48 @@ test('owner panel: accounts per business, signed invitation for a manager and re
     await page.setViewportSize({ width: 390, height: 844 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: `${shots}/owners-390.png`, fullPage: true });
+
+});
+
+test('revenue: prices are set in pesos, sent in centavos, and the charge goes with a renewal', async ({ page }) => {
+
+    const errors: string[] = [];
+    page.on('pageerror', e => errors.push(e.message));
+    const calls = await mockServer(page);
+    await page.setViewportSize({ width: 1600, height: 1000 });
+    await page.goto('/');
+    await nav(page, 'Ganancias');
+    await expect(page.getByRole('heading', { name: 'Ganancias', level: 1 })).toBeVisible();
+    await expect(page.getByText('Aún no hay precios')).toBeVisible();
+    await expect(page.locator('.kpi', { hasText: 'Recurrente al mes' })).toContainText('$50,020');
+    await expect(page.getByRole('img', { name: /Ingresos por mes/ })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Vencen en 30 días' })).toContainText('Cantina La 20');
+    const save = page.getByRole('button', { name: 'Guardar precios' });
+    await expect(save).toBeDisabled();
+    await page.getByLabel('Lite mensual').fill('899');
+    await page.getByLabel('Lite anual').fill('8,990');
+    await page.getByLabel('Lite de por vida').fill('24900');
+    await page.getByLabel('Pro mensual').fill('1690');
+    await page.getByLabel('Pro anual').fill('16900');
+    await page.getByLabel('Pro de por vida').fill('44900');
+    await page.getByLabel('Comanderos móviles').fill('290');
+    await page.getByLabel('Delivery Hub').fill('490.50');
+    await page.getByLabel('Web propia de pedidos').fill('390');
+    await page.getByLabel('Combo PYME Digital').fill('1099');
+    await page.getByLabel('Combo Delivery Pro').fill('2390');
+    await page.screenshot({ path: `${shots}/revenue-1600.png` });
+    await save.click();
+    await expect.poll(() => calls.find(c => c.method === 'PUT' && c.path === '/admin/v1/prices')?.body).toEqual({ tiers: { lite: { monthly: 89_900, annual: 899_000, permanent: 2_490_000 }, pro: { monthly: 169_000, annual: 1_690_000, permanent: 4_490_000 } }, addons: { mobileOrdering: 29_000, deliveryHub: 49_050, webOrdering: 39_000 }, combos: { pyme: 109_900, delivery: 239_000 } });
+    await expect(page.getByText(/Vigentes desde el/)).toBeVisible();
+
+    await nav(page, 'Licencias');
+    await row(page, /Cantina La 20/).click();
+    await detail(page).getByRole('button', { name: 'Renovar' }).click();
+    const renew = page.getByRole('dialog', { name: 'Renovar licencia' });
+    await expect(renew).toContainText('Precio de lista: $899');
+    await renew.getByLabel('Cobro').fill('800');
+    await renew.getByRole('button', { name: 'Renovar' }).click();
+    await expect.poll(() => calls.find(c => c.path.endsWith('/renew'))?.body).toEqual({ charge: 80_000 });
+    expect(errors).toEqual([]);
 
 });

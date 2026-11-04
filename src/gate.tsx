@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { KeyRound } from 'lucide-react';
+import { Headset, KeyRound, Layers, TrendingUp } from 'lucide-react';
+import logo from './assets/logo.png';
 import * as api from './api';
-import { Secret, useSubmit } from './ui';
+import { Secret, Tile, useSubmit } from './ui';
 
 type Step = { kind: 'server' } | { kind: 'login'; username: string } | { kind: 'reset'; username: string } | { kind: 'enroll' } | { kind: 'totp'; username: string; secret: string; uri: string };
 
@@ -16,9 +17,9 @@ export function Gate({ onSignedIn }: { onSignedIn: (username: string) => void })
 
         <aside className="gate-art" aria-hidden="true">
 
-            <div className="brand"><span className="brand-mark"><KeyRound size={17} /></span><div><b>Culinary Admin</b><small>Panel del proveedor</small></div></div>
-            <div><h1>Cada licencia, en su gancho.</h1><p>Emite, renueva y retira las licencias de tus clientes, atiende su soporte y publica actualizaciones desde un solo lugar.</p></div>
-            <div className="gate-rack">{['', 'lit', '', 'out', '', '', 'out', ''].map((c, i) => <span key={i} className={c} />)}</div>
+            <div className="brand"><img src={logo} alt="" /><b>Culinary</b><small>Admin</small></div>
+            <div><h1>Tus licencias, versiones y soporte en un solo lugar.</h1><p>Emite, renueva y retira las licencias de tus clientes, mira lo que dejan, atiende su soporte y publica actualizaciones.</p></div>
+            <div className="gate-tiles"><Tile icon={KeyRound} tone="red" /><Tile icon={TrendingUp} tone="gold" /><Tile icon={Layers} tone="violet" /><Tile icon={Headset} tone="teal" /></div>
         
         </aside>
 

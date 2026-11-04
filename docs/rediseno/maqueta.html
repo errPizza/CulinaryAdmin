@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Culinary Admin — rediseño</title>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+@font-face { font-family: 'Manrope'; src: url('../../node_modules/@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2') format('woff2'); font-weight: 200 800; }
+@font-face { font-family: 'JBM'; src: url('../../node_modules/@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2') format('woff2'); font-weight: 400; }
+@font-face { font-family: 'JBM'; src: url('../../node_modules/@fontsource/jetbrains-mono/files/jetbrains-mono-latin-500-normal.woff2') format('woff2'); font-weight: 500; }
+
+:root {
+  --bg: #0b0a0d; --rail: #0e0c10; --panel: #141218; --panel-2: #1a171f; --raise: #221e28;
+  --line: #2a2530; --line-2: #383140;
+  --ink: #f3f0ea; --text: #d4cfc7; --muted: #948e98; --faint: #6b6570;
+  --red: #e1263f; --red-2: #ff4a60; --red-ink: #ff7184; --red-deep: #8f1325;
+  --violet: #8b5cf6; --teal: #22c3a0; --amber: #f2a93b; --gold: #e8c26a; --blue: #4f8df7;
+  --green: #4fd18b; --sans: 'Manrope', system-ui, sans-serif; --mono: 'JBM', ui-monospace, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); }
+body { color: var(--text); font: 500 14px/1.45 var(--sans); -webkit-font-smoothing: antialiased; width: 1600px; height: 1000px; overflow: hidden; }
+.mono, code { white-space: nowrap; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 12.5px; }
+.app { display: grid; grid-template-columns: 236px 1fr; height: 1000px; }
+
+/* Rail */
+.rail { position: relative; overflow: hidden; background: linear-gradient(180deg, #120e13 0%, #0d0b0f 60%, #0a090c 100%); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 26px 14px 18px; }
+.rail::before { content: ''; position: absolute; right: -232px; top: 380px; width: 260px; height: 640px; border-radius: 50%; border-left: 2px solid rgba(225,38,63,.55); box-shadow: -30px 0 80px -20px rgba(225,38,63,.35) inset; }
+.rail::after { content: ''; position: absolute; left: -60px; bottom: 120px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(225,38,63,.14), transparent 70%); }
+.brand { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 30px; }
+.brand img { width: 62px; height: 62px; filter: drop-shadow(0 6px 18px rgba(225,38,63,.45)); }
+.brand b { font-size: 25px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; line-height: 1; }
+.brand small { font-size: 17px; font-weight: 700; color: var(--text); margin-top: -2px; }
+.nav { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 3px; }
+.nav a { display: flex; align-items: center; gap: 13px; padding: 11px 14px; border-radius: 10px; color: var(--text); font-weight: 600; font-size: 14.5px; text-decoration: none; }
+.nav a svg { width: 20px; height: 20px; color: var(--muted); stroke-width: 1.8; }
+.nav a.on { background: linear-gradient(135deg, #e8314a, #b3172d); color: #fff; box-shadow: 0 8px 24px -8px rgba(225,38,63,.7), inset 0 1px 0 rgba(255,255,255,.18); }
+.nav a.on svg { color: #fff; }
+.nav .badge { margin-left: auto; min-width: 22px; height: 20px; padding: 0 6px; border-radius: 99px; background: rgba(225,38,63,.16); color: var(--red-ink); font-size: 11.5px; font-weight: 700; display: grid; place-items: center; }
+.nav a.on .badge { background: rgba(255,255,255,.22); color: #fff; }
+.nav .sep { height: 1px; background: var(--line); margin: 10px 8px; }
+.rail-foot { position: relative; z-index: 1; margin-top: auto; display: flex; flex-direction: column; gap: 16px; padding: 0 6px; }
+.me { display: flex; align-items: center; gap: 11px; }
+.avatar { position: relative; width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #3a3340, #1e1a22); display: grid; place-items: center; color: var(--ink); font-weight: 800; border: 1px solid var(--line-2); }
+.avatar::after { content: ''; position: absolute; right: 0; bottom: 1px; width: 11px; height: 11px; border-radius: 50%; background: var(--green); border: 2px solid var(--rail); }
+.me b { display: block; color: var(--ink); font-size: 14.5px; } .me small { color: var(--muted); font-size: 12px; }
+.out { display: flex; align-items: center; gap: 10px; color: var(--text); font-size: 13.5px; } .out svg { width: 19px; color: var(--red-2); }
+
+/* Main */
+.main { position: relative; padding: 22px 30px 26px; display: flex; flex-direction: column; gap: 18px; min-width: 0; overflow: hidden; }
+.top { display: flex; align-items: center; gap: 18px; justify-content: flex-end; }
+.search { width: 380px; height: 44px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); display: flex; align-items: center; gap: 12px; padding: 0 16px; color: var(--muted); }
+.search svg { width: 19px; } .search kbd { margin-left: auto; font: 500 11px var(--mono); color: var(--faint); border: 1px solid var(--line-2); border-radius: 6px; padding: 2px 6px; }
+.icon-btn { position: relative; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; color: var(--text); }
+.icon-btn svg { width: 22px; } .icon-btn i.dot { position: absolute; top: 4px; right: 4px; min-width: 18px; height: 18px; border-radius: 99px; background: var(--red); color: #fff; font: 700 10.5px var(--sans); font-style: normal; display: grid; place-items: center; border: 2px solid var(--bg); }
+
+.masthead { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+.mast-r { display: flex; flex-direction: column; align-items: flex-end; gap: 14px; }
+.head { display: flex; align-items: stretch; gap: 20px; padding-top: 18px; }
+.head .bar { width: 5px; align-self: stretch; border-radius: 3px; background: linear-gradient(180deg, var(--red-2), var(--red-deep)); box-shadow: 0 0 18px rgba(225,38,63,.55); }
+.head h1 { font-size: 30px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; line-height: 1.15; }
+.head p { color: var(--text); font-size: 15.5px; margin-top: 4px; }
+.head-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+.activity { display: flex; align-items: center; gap: 14px; padding: 13px 20px; border-radius: 14px; background: linear-gradient(135deg, var(--panel-2), var(--panel)); border: 1px solid var(--line); min-width: 300px; }
+.activity svg { width: 24px; color: var(--text); } .activity small { display: block; color: var(--muted); font-size: 12.5px; } .activity b { color: var(--ink); font-size: 13.5px; font-weight: 600; }
+
+/* Cards */
+.card { background: linear-gradient(180deg, #17141b, #121015); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 20px 40px -24px rgba(0,0,0,.8); }
+.card-head { display: flex; align-items: center; gap: 14px; padding: 18px 20px 14px; }
+.card-head .ico { width: 38px; height: 38px; }
+.card-head h2 { font-size: 19px; font-weight: 800; color: var(--ink); letter-spacing: -.01em; }
+.card-head p { color: var(--muted); font-size: 13px; }
+.card-head .right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+.card-body { padding: 0 20px 18px; }
+.more { display: inline-flex; align-items: center; gap: 6px; color: var(--red-ink); font-weight: 600; font-size: 13.5px; padding: 10px 20px 16px; } .more svg { width: 15px; }
+
+.ico { flex: none; display: grid; place-items: center; color: #fff; }
+.ico svg { width: 60%; height: 60%; }
+.ico.flat svg { stroke-width: 2; } .ico.flat.red { color: var(--red-2); } .ico.flat.violet { color: #a78bfa; } .ico.flat.teal { color: var(--teal); } .ico.flat.amber { color: var(--amber); } .ico.flat.gold { color: var(--gold); } .ico.flat.blue { color: #7aa8ff; }
+
+.tile3d { width: 66px; height: 66px; border-radius: 16px; position: relative; box-shadow: 0 14px 28px -10px var(--glow), inset 0 2px 0 rgba(255,255,255,.35), inset 0 -6px 12px rgba(0,0,0,.25); }
+.tile3d::after { content: ''; position: absolute; inset: 3px 3px 50% 3px; border-radius: 13px 13px 30px 30px; background: linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,0)); }
+.tile3d svg { width: 34px; height: 34px; stroke-width: 2.2; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); position: relative; z-index: 1; }
+.g-red { background: linear-gradient(145deg, #ff5a6e, #c8152f 70%); --glow: rgba(225,38,63,.6); }
+.g-violet { background: linear-gradient(145deg, #a37bff, #5b2fd6 70%); --glow: rgba(139,92,246,.6); }
+.g-teal { background: linear-gradient(145deg, #3fe0b8, #0e8c70 70%); --glow: rgba(34,195,160,.55); }
+.g-amber { background: linear-gradient(145deg, #ffc35a, #d07a0c 70%); --glow: rgba(242,169,59,.55); }
+.g-gold { background: linear-gradient(145deg, #ffe08a, #b88514 70%); --glow: rgba(232,194,106,.5); }
+.g-blue { background: linear-gradient(145deg, #77a8ff, #2a5fd0 70%); --glow: rgba(79,141,247,.55); }
+.g-steel { background: linear-gradient(145deg, #8e8a9a, #45404f 70%); --glow: rgba(140,130,160,.4); }
+
+/* KPI tiles */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.kpi { position: relative; overflow: hidden; padding: 18px 18px; display: flex; align-items: center; gap: 18px; height: 112px; border-radius: 18px; border: 1px solid var(--line); background: linear-gradient(135deg, var(--tint) 0%, #141218 55%); }
+.kpi .v { font-size: 32px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+.kpi .v small { font-size: 17px; font-weight: 700; color: var(--text); margin-left: 2px; }
+.kpi .l { color: var(--text); font-size: 14px; margin-top: 8px; }
+.kpi .chip { position: absolute; top: 16px; right: 16px; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 99px; font-size: 12px; font-weight: 700; }
+.chip.up { background: rgba(79,209,139,.14); color: var(--green); } .chip.down { background: rgba(225,38,63,.16); color: var(--red-ink); } .chip.neutral { background: rgba(255,255,255,.07); color: var(--text); }
+.chip svg { width: 13px; height: 13px; stroke-width: 2.6; }
+.kpi .go { position: absolute; top: 16px; right: 16px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--goc); color: #fff; } .kpi .go svg { width: 15px; stroke-width: 2.6; }
+.kpi svg.spark { position: absolute; right: 0; bottom: 0; width: 34%; height: 50px; opacity: .85; }
+.kpi > div:nth-child(2) { position: relative; z-index: 1; }
+.t-red { --tint: rgba(225,38,63,.22); --goc: #c8152f; } .t-violet { --tint: rgba(139,92,246,.22); --goc: #6d3fe6; } .t-teal { --tint: rgba(34,195,160,.2); --goc: #109a7b; } .t-amber { --tint: rgba(242,169,59,.2); --goc: #c97a12; } .t-gold { --tint: rgba(232,194,106,.18); --goc: #a77a10; } .t-blue { --tint: rgba(79,141,247,.2); --goc: #2a5fd0; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--raise); color: var(--ink); font: 650 13.5px var(--sans); white-space: nowrap; }
+.btn svg { width: 17px; height: 17px; stroke-width: 2.2; }
+.btn.primary { border: 0; background: linear-gradient(135deg, #f0384f, #c1172f); color: #fff; box-shadow: 0 10px 24px -10px rgba(225,38,63,.8), inset 0 1px 0 rgba(255,255,255,.2); }
+.btn.ghost { background: transparent; } .btn.sm { height: 32px; padding: 0 12px; font-size: 12.5px; border-radius: 9px; } .btn.sm svg { width: 15px; height: 15px; }
+.btn.danger { color: var(--red-ink); border-color: rgba(225,38,63,.35); background: rgba(225,38,63,.08); }
+.btn.dots { width: 32px; padding: 0; justify-content: center; }
+.btn.tint-red { background: linear-gradient(135deg, rgba(225,38,63,.32), rgba(225,38,63,.14)); border-color: rgba(225,38,63,.4); }
+.btn.tint-gold { background: linear-gradient(135deg, rgba(232,194,106,.24), rgba(232,194,106,.08)); border-color: rgba(232,194,106,.35); }
+.btn.tint-violet { background: linear-gradient(135deg, rgba(139,92,246,.3), rgba(139,92,246,.1)); border-color: rgba(139,92,246,.4); }
+
+/* Tables */
+table { width: 100%; border-collapse: separate; border-spacing: 0; }
+thead th { text-align: left; font-weight: 600; font-size: 12.5px; color: var(--muted); padding: 11px 14px; background: rgba(255,255,255,.025); border-bottom: 1px solid var(--line); }
+thead th:first-child { border-radius: 10px 0 0 0; } thead th:last-child { border-radius: 0 10px 0 0; }
+tbody td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,.045); color: var(--text); vertical-align: middle; font-size: 13.5px; }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr.sel td { background: rgba(225,38,63,.07); } tbody tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--red); }
+td .main-t { color: var(--ink); font-weight: 650; white-space: nowrap; } td .sub { color: var(--muted); font-size: 12px; white-space: nowrap; }
+td.r, th.r { text-align: right; } td.num { white-space: nowrap; font-family: var(--mono); font-size: 12.5px; color: var(--ink); }
+.tbl-wrap { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 650; white-space: nowrap; }
+.pill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.ok { background: rgba(79,209,139,.13); color: var(--green); }
+.pill.warn { background: rgba(242,169,59,.14); color: var(--amber); }
+.pill.bad { background: rgba(225,38,63,.15); color: var(--red-ink); }
+.pill.idle { background: rgba(255,255,255,.07); color: var(--muted); }
+.pill.info { background: rgba(79,141,247,.14); color: #8fb5ff; }
+.pill.vio { background: rgba(139,92,246,.16); color: #b9a0ff; }
+.tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid var(--line-2); color: var(--text); background: rgba(255,255,255,.03); }
+.tag.pro { color: var(--gold); border-color: rgba(232,194,106,.35); background: rgba(232,194,106,.08); }
+.tag.lite { color: #9ec3ff; border-color: rgba(79,141,247,.35); background: rgba(79,141,247,.08); }
+
+.seg { display: inline-flex; padding: 4px; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 11px; }
+.seg span { white-space: nowrap; padding: 6px 13px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--muted); display: inline-flex; gap: 7px; align-items: center; }
+.seg span.on { background: var(--raise); color: var(--ink); box-shadow: inset 0 1px 0 rgba(255,255,255,.06); }
+.seg span b { font-size: 11px; color: var(--faint); } .seg span.on b { color: var(--red-ink); }
+.field-s { height: 40px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); display: flex; align-items: center; gap: 10px; padding: 0 14px; color: var(--muted); font-size: 13.5px; }
+.field-s svg { width: 17px; }
+
+.grid { display: grid; gap: 18px; min-height: 0; }
+.row { display: flex; align-items: center; gap: 12px; }
+.muted { color: var(--muted); } .ink { color: var(--ink); }
+.kv { display: grid; grid-template-columns: 130px 1fr; gap: 9px 14px; font-size: 13px; } .kv dt { color: var(--muted); } .kv dd { color: var(--ink); }
+.divider { height: 1px; background: var(--line); margin: 12px 0; }
+.h3 { font-size: 14px; font-weight: 750; color: var(--ink); }
+.snip { font: 12px/1.6 var(--mono); color: #cfc9d4; background: #0c0b0e; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; white-space: pre; overflow: hidden; }
+
+/* Module cards (Resumen) */
+.mods { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+.mod { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.mod .t { display: flex; gap: 10px; } .mod .t .ico { width: 30px; height: 30px; }
+.mod b { color: var(--ink); font-size: 16px; display: block; } .mod small { color: var(--muted); font-size: 12px; }
+.mod .art { display: flex; justify-content: center; } .mod .art .tile3d { width: 74px; height: 74px; border-radius: 20px; }
+.mod .art .tile3d svg { width: 38px; height: 38px; }
+.mod .btn { justify-content: center; }
+
+/* Charts */
+.chart { width: 100%; display: block; }
+.legend { display: flex; gap: 16px; font-size: 12.5px; color: var(--text); } .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+/* Drawer */
+.drawer { padding: 20px; display: flex; flex-direction: column; gap: 4px; }
+.keyplate { position: relative; border-radius: 14px; padding: 16px; background: linear-gradient(145deg, #241e28, #17131a); border: 1px solid var(--line-2); }
+.keyplate::before { content: ''; position: absolute; top: -7px; left: 50%; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--red); box-shadow: 0 0 12px rgba(225,38,63,.7); }
+
+/* Support */
+.ticket { padding: 13px 16px; border-bottom: 1px solid rgba(255,255,255,.045); display: flex; flex-direction: column; gap: 5px; }
+.ticket.on { background: rgba(225,38,63,.07); box-shadow: inset 3px 0 0 var(--red); }
+.ticket .row1 { display: flex; align-items: center; gap: 8px; } .ticket b { color: var(--ink); font-size: 13.5px; } .ticket time { margin-left: auto; color: var(--faint); font: 11.5px var(--mono); }
+.ticket p { color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.msg { max-width: 72%; padding: 12px 15px; border-radius: 14px; font-size: 13.5px; line-height: 1.5; }
+.msg.them { background: var(--raise); border: 1px solid var(--line-2); border-top-left-radius: 4px; color: var(--text); }
+.msg.us { margin-left: auto; background: linear-gradient(135deg, rgba(225,38,63,.28), rgba(225,38,63,.14)); border: 1px solid rgba(225,38,63,.35); border-top-right-radius: 4px; color: var(--ink); }
+.msg-meta { font-size: 11.5px; color: var(--faint); margin: 4px 2px 0; } .msg-meta.r { text-align: right; }
+
+.price-in { display: flex; align-items: center; height: 38px; border-radius: 9px; background: #0e0c11; border: 1px solid var(--line-2); padding: 0 11px; gap: 6px; font: 500 13.5px var(--mono); color: var(--ink); }
+.price-in span { color: var(--faint); } .price-in em { margin-left: auto; font: 600 11px var(--sans); color: var(--faint); font-style: normal; }
+.price-in.focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(225,38,63,.2); }
+.ptable { display: grid; grid-template-columns: 1.1fr 1fr 1fr 1fr; gap: 10px 12px; align-items: center; }
+.ptable .h { font-size: 12px; color: var(--muted); font-weight: 600; }
+.bar-h { height: 8px; border-radius: 99px; background: rgba(255,255,255,.06); overflow: hidden; } .bar-h i { display: block; height: 100%; border-radius: 99px; }
+.drop { border: 1.5px dashed var(--line-2); border-radius: 14px; padding: 18px; display: flex; align-items: center; gap: 16px; background: rgba(255,255,255,.015); }
+.prog { height: 6px; border-radius: 99px; background: rgba(255,255,255,.07); overflow: hidden; } .prog i { display: block; height: 100%; background: linear-gradient(90deg, var(--red), var(--red-2)); border-radius: 99px; }
+.stat-mini { padding: 14px 16px; border-radius: 14px; background: rgba(255,255,255,.025); border: 1px solid var(--line); }
+.stat-mini small { color: var(--muted); font-size: 12px; display: block; } .stat-mini b { color: var(--ink); font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.watermark { position: absolute; right: -24px; bottom: -30px; width: 150px; height: 150px; color: rgba(255,255,255,.035); } .watermark svg { width: 100%; height: 100%; stroke-width: 1.2; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail">
+    <div class="brand"><img src="../../src-tauri/icons/icon.png" alt=""><b>Culinary</b><small>Admin</small></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="rail-foot">
+      <div class="me"><div class="avatar">PD</div><div><b>PizzaDev</b><small>Administrador</small></div></div>
+      <div class="out"><i data-lucide="log-out"></i>Cerrar sesión</div>
+    </div>
+  </aside>
+  <main class="main">
+    <div id="page" style="display:contents"></div>
+  </main>
+</div>
+
+<script>
+const P = new URLSearchParams(location.search).get('p') || 'resumen';
+const NAV = [
+  ['resumen', 'Resumen', 'layout-dashboard'],
+  ['licencias', 'Licencias', 'key-round', 4],
+  ['ganancias', 'Ganancias', 'trending-up'],
+  ['versiones', 'Versiones', 'layers'],
+  ['soporte', 'Soporte', 'headset', 6],
+  ['fallos', 'Fallos', 'triangle-alert', 2],
+  ['sucursales', 'Sucursales', 'store'],
+  ['dueno', 'Panel del dueño', 'crown'],
+  ['equipo', 'Equipo y seguridad', 'shield-check'],
+];
+document.getElementById('nav').innerHTML = NAV.map(([k, l, i, n], idx) => (idx === 3 ? '' : '') + `<a class="${k === P ? 'on' : ''}"><i data-lucide="${i}"></i>${l}${n ? `<span class="badge">${n}</span>` : ''}</a>`).join('');
+
+const I = (n, cls = '') => `<i data-lucide="${n}" class="${cls}"></i>`;
+const T3 = (n, g, s = 66) => `<div class="ico tile3d ${g}" style="width:${s}px;height:${s}px">${I(n)}</div>`;
+const FI = (n, c, s = 38) => `<div class="ico flat ${c}" style="width:${s}px;height:${s}px">${I(n)}</div>`;
+const pill = (cls, t) => `<span class="pill ${cls}">${t}</span>`;
+const money = n => '$' + n.toLocaleString('en-US');
+
+function spark(color, pts) {
+  const w = 220, h = 62, max = Math.max(...pts), min = Math.min(...pts);
+  const xy = pts.map((p, i) => [i * w / (pts.length - 1), h - 6 - (p - min) / (max - min || 1) * (h - 18)]);
+  const d = xy.map(([x, y], i) => (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1)).join(' ');
+  const id = 'g' + Math.random().toString(36).slice(2, 7);
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".45"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><path d="${d} L${w} ${h} L0 ${h} Z" fill="url(#${id})"/><path d="${d}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+}
+function kpi(t, icon, g, v, label, extra = '', color = '#ff4a60', pts = [3,4,3,5,4,6,5,8,7,9]) {
+  return `<div class="kpi ${t}">${T3(icon, g)}<div><div class="v">${v}</div><div class="l">${label}</div></div>${extra}${spark(color, pts)}</div>`;
+}
+const go = '<span class="go">' + I('arrow-right') + '</span>';
+const up = t => `<span class="chip up">${I('arrow-up')}${t}</span>`;
+const down = t => `<span class="chip down">${I('arrow-down')}${t}</span>`;
+
+const TOPBAR = `<div class="top"><div class="search">${'<i data-lucide="search"></i>'}Buscar licencias, sucursales, tickets…<kbd>Ctrl K</kbd></div><div class="icon-btn"><i data-lucide="bell"></i><i class="dot">3</i></div><div class="icon-btn"><i data-lucide="settings"></i></div></div>`;
+function header(title, sub, right = '') {
+  return `<div class="masthead"><div class="head"><div class="bar"></div><div><h1>${title}</h1><p>${sub}</p></div></div><div class="mast-r">${TOPBAR}${right}</div></div>`;
+}
+const activity = `<div class="activity">${I('calendar-days')}<div><small>Última actividad</small><b>3 nov. 2026 · 20:14 h · Renovó LC-0041</b></div></div>`;
+
+const LIC = [
+  ['LC-0041', 'La Parrilla de Don Chuy', 'Centro', 'lpdc-centro', 'Anual', 'pro', ['Comanderos', 'Delivery Hub'], 'ok', 'Activa', '14 mar. 2027', 'TPM'],
+  ['LC-0042', 'La Parrilla de Don Chuy', 'Andares', 'lpdc-andares', 'Anual', 'pro', ['Comanderos'], 'ok', 'Activa', '14 mar. 2027', 'TPM'],
+  ['LC-0038', 'Mariscos El Faro', 'Chapalita', 'faro-chapalita', 'Mensual', 'lite', [], 'warn', 'Vence en 5 días', '8 nov. 2026', 'Huella'],
+  ['LC-0035', 'Café Tlaquepaque', 'Jardín', 'cafe-tlaq', 'Mensual', 'lite', ['Comanderos'], 'ok', 'Activa', '29 nov. 2026', 'TPM'],
+  ['LC-0044', 'Tacos Los Primos', 'Providencia', 'primos-prov', 'Prueba · 14 días', 'pro', [], 'idle', 'Sin activar', '—', '—'],
+  ['LC-0029', 'Sushi Kaito', 'Zapopan', 'kaito-zap', 'Mensual', 'pro', ['Web propia'], 'bad', 'Vencida', '30 oct. 2026', 'TPM'],
+  ['LC-0031', 'Pizzería Napoli 1987', 'Americana', 'napoli-1987', 'De por vida', 'pro', ['Delivery Hub', 'Web propia'], 'ok', 'Activa', 'Sin vencimiento', 'TPM'],
+  ['LC-0036', 'Birria Don Nacho', 'Tonalá', 'nacho-tonala', 'Anual', 'lite', [], 'ok', 'Activa', '2 ago. 2027', 'Huella'],
+  ['LC-0040', 'El Rincón Vegano', 'Chapultepec', 'rincon-veg', 'Mensual', 'lite', ['Comanderos'], 'warn', 'Vence en 7 días', '10 nov. 2026', 'TPM'],
+  ['LC-0019', 'Fonda Doña Mary', 'Oblatos', 'dona-mary', 'Anual', 'lite', [], 'idle', 'Revocada', '—', '—'],
+];
+
+const pages = {};
+
+/* ───────── Resumen ───────── */
+pages.resumen = () => `
+${header('¡Bienvenido, PizzaDev!', 'Licencias, ingresos, versiones y soporte de Culinary Restaurant en un solo lugar.', activity)}
+<div class="kpis">
+  ${kpi('t-red', 'key-round', 'g-red', '48', 'Licencias activas', up('+4 este mes'), '#ff4a60', [30,32,31,35,36,38,40,41,44,48])}
+  ${kpi('t-gold', 'trending-up', 'g-gold', '$50.0<small>k</small>', 'Ingreso mensual recurrente', up('+8.6%'), '#e8c26a', [40,42,41,45,47,46,50,52,55,58])}
+  ${kpi('t-teal', 'headset', 'g-teal', '6', 'Tickets abiertos', go, '#22c3a0', [2,4,3,6,5,4,7,5,8,6])}
+  ${kpi('t-amber', 'triangle-alert', 'g-amber', '2', 'Fallos sin resolver', go, '#f2a93b', [1,0,2,1,3,1,0,2,4,2])}
+</div>
+<div class="grid" style="grid-template-columns: 1.08fr 1fr">
+  <section class="card">
+    <div class="card-head">${FI('key-round', 'red', 40)}<div><h2>Licencias</h2><p>Las que vencen primero y las recién creadas.</p></div><div class="right"><span class="btn primary">${I('plus')}Nueva licencia</span></div></div>
+    <div class="card-body"><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Cliente</th><th>Estado</th><th>Vencimiento</th><th class="r">Acciones</th></tr></thead><tbody>
+      ${[LIC[2], LIC[8], LIC[5]].map(l => `<tr><td class="num">${l[0]}</td><td><div class="main-t">${l[1]}</div><div class="sub">${l[2]}</div></td><td>${pill(l[7], l[8])}</td><td class="num">${l[9]}</td><td class="r"><span class="btn sm">${I('eye')}Ver</span> <span class="btn sm dots">${I('ellipsis')}</span></td></tr>`).join('')}
+    </tbody></table></div></div>
+    <div class="more" style="padding-top:0">Ver todas las licencias ${I('arrow-right')}</div>
+  </section>
+  <section class="card">
+    <div class="card-head">${FI('layers', 'violet', 40)}<div><h2>Versiones</h2><p>Lo último que subiste y a quién le llegó.</p></div><div class="right"><span class="btn primary">${I('upload')}Subir versión</span></div></div>
+    <div class="card-body"><div class="tbl-wrap"><table><thead><tr><th>Versión</th><th>Plataforma</th><th>Tamaño</th><th>Estado</th><th class="r"></th></tr></thead><tbody>
+      <tr><td class="num">0.3.03</td><td>Servidor CulinaryOS</td><td class="num">83.9 MB</td><td>${pill('ok', 'Publicada · todas')}</td><td class="r"><span class="btn sm">${I('undo-2')}Retirar</span></td></tr>
+      <tr><td class="num">0.1.6</td><td>Culinary Admin · Windows</td><td class="num">11.2 MB</td><td>${pill('info', 'Lista')}</td><td class="r"><span class="btn sm">${I('send')}Publicar</span></td></tr>
+      <tr><td class="num">0.3.02</td><td>Servidor CulinaryOS</td><td class="num">83.9 MB</td><td>${pill('idle', 'Reemplazada')}</td><td class="r"><span class="btn sm dots">${I('ellipsis')}</span></td></tr>
+    </tbody></table></div></div>
+    <div class="more" style="padding-top:0">Ver todas las versiones ${I('arrow-right')}</div>
+  </section>
+</div>
+<div class="mods">
+  ${[['headset','teal','Soporte','6 tickets esperan respuesta.','g-teal','message-square-more','tint-red','message-circle','Abrir soporte'],
+     ['triangle-alert','red','Fallos','1 crítico en Sushi Kaito.','g-red','file-warning','tint-red','chart-column','Ver reportes'],
+     ['store','violet','Sucursales','21 con certificado.','g-violet','store','tint-red','map-pin','Administrar'],
+     ['crown','gold','Panel del dueño','17 cuentas de dueños.','g-gold','crown','tint-gold','chart-column','Acceder'],
+     ['shield-check','violet','Equipo y seguridad','2 equipos con llave.','g-steel','lock-keyhole','tint-violet','users','Gestionar']]
+    .map(([i,c,t,s,g,art,bt,bi,bl]) => `<section class="card mod"><div class="t">${FI(i, c, 30)}<div><b>${t}</b><small>${s}</small></div></div><div class="art">${T3(art, g, 74)}</div><span class="btn ${bt}">${I(bi)}${bl}</span></section>`).join('')}
+</div>`;
+
+/* ───────── Licencias ───────── */
+pages.licencias = () => `
+${header('Licencias', 'Crea, renueva, revoca o libera el equipo de cada sucursal.', `<div class="row"><span class="btn">${I('download')}Exportar</span><span class="btn primary">${I('plus')}Nueva licencia</span></div>`)}
+<div class="kpis">
+  ${kpi('t-teal', 'badge-check', 'g-teal', '48', 'Activas', up('+4'), '#22c3a0', [36,37,39,40,41,42,44,45,46,48])}
+  ${kpi('t-amber', 'clock-alert', 'g-amber', '4', 'Vencen en 7 días', go, '#f2a93b', [1,2,1,3,2,2,4,3,3,4])}
+  ${kpi('t-red', 'circle-x', 'g-red', '1', 'Vencidas', go, '#ff4a60', [0,1,0,0,1,2,1,0,1,1])}
+  ${kpi('t-violet', 'hourglass', 'g-violet', '3', 'Sin activar', go, '#a37bff', [1,1,2,1,2,3,2,2,3,3])}
+</div>
+<div class="grid" style="grid-template-columns: minmax(0,1fr) 360px; flex:1">
+  <section class="card" style="display:flex;flex-direction:column">
+    <div class="card-head" style="padding-bottom:12px">
+      <div class="seg"><span class="on">Todas <b>53</b></span><span>Activas <b>48</b></span><span>Por vencer <b>4</b></span><span>Vencidas <b>1</b></span><span>Sin activar <b>3</b></span></div>
+      <div class="right"><div class="field-s" style="width:230px">${I('search')}Cliente o siteId</div></div>
+    </div>
+    <div class="card-body"><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Cliente · sucursal</th><th>Plan</th><th>Estado</th><th>Vencimiento</th><th class="r"></th></tr></thead><tbody>
+      ${LIC.slice(0, 8).map((l, i) => `<tr class="${i === 0 ? 'sel' : ''}"><td class="num">${l[0]}</td><td><div class="main-t">${l[1]}</div><div class="sub">${l[2]} · <code style="font-size:11.5px">${l[3]}</code></div></td><td><span class="tag ${l[5]}">${l[5] === 'pro' ? 'Pro' : 'Lite'}</span> <span class="muted" style="font-size:12.5px;white-space:nowrap">${l[4]}</span></td><td>${pill(l[7], l[8])}</td><td class="num">${l[9]}</td><td class="r"><span class="btn sm dots">${I('ellipsis')}</span></td></tr>`).join('')}
+    </tbody></table></div></div>
+  </section>
+  <section class="card drawer">
+    <div class="row" style="justify-content:space-between"><span class="muted mono">LC-0041 · revisión 3</span>${pill('ok', 'Activa')}</div>
+    <h2 style="font-size:21px;color:var(--ink);font-weight:800;margin-top:6px">La Parrilla de Don Chuy</h2>
+    <p class="muted">Sucursal Centro · <code>lpdc-centro</code></p>
+    <div class="keyplate" style="margin-top:12px"><div class="row" style="justify-content:space-between"><div><small class="muted" style="font-size:12px">Vence</small><div class="mono" style="color:var(--gold);font-size:18px">14 mar. 2027</div></div><div style="text-align:right"><small class="muted" style="font-size:12px">Quedan</small><div class="ink" style="font-size:18px;font-weight:800">131 días</div></div></div><div class="prog" style="margin-top:12px"><i style="width:64%"></i></div></div>
+    <div class="divider"></div>
+    <dl class="kv"><dt>Plan</dt><dd><span class="tag pro">Pro</span> Anual · $16,900</dd><dt>Complementos</dt><dd>Comanderos, Delivery Hub</dd><dt>Límites</dt><dd>25 usuarios · 40 mesas</dd><dt>Equipo</dt><dd>TPM 2.0 · <code>ES256</code></dd><dt>Validó</dt><dd class="mono">hace 12 min</dd><dt>Negocio</dt><dd>2 sucursales</dd></dl>
+    <div class="divider"></div>
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px"><span class="btn primary" style="justify-content:center">${I('refresh-cw')}Renovar</span><span class="btn" style="justify-content:center">${I('pencil')}Editar</span><span class="btn" style="justify-content:center">${I('cpu')}Liberar equipo</span><span class="btn danger" style="justify-content:center">${I('ban')}Revocar</span></div>
+  </section>
+</div>`;
+
+/* ───────── Ganancias ───────── */
+const MONTHS = ['Dic', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov'];
+const REV = [[14.2,8.1,1.2,0],[15.0,8.9,1.4,24.9],[15.6,9.8,1.6,0],[16.1,11.2,2.0,0],[16.9,12.6,2.3,44.9],[17.4,13.5,2.7,0],[17.9,15.1,3.1,0],[18.6,16.9,3.6,24.9],[19.2,18.0,4.1,0],[19.8,19.4,4.6,0],[20.4,21.6,5.1,0],[21.1,23.3,5.6,0]];
+function revChart() {
+  const W = 760, H = 250, L = 46, B = 28, T = 10, max = 80, bw = 34;
+  const step = (W - L - 10) / 12; const y = v => T + (H - T - B) * (1 - v / max);
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}">`;
+  for (let v = 0; v <= max; v += 20) s += `<line x1="${L}" x2="${W - 6}" y1="${y(v)}" y2="${y(v)}" stroke="#2a2530" ${v ? 'stroke-dasharray="3 5"' : ''}/><text x="${L - 10}" y="${y(v) + 4}" fill="#6b6570" font-size="11" text-anchor="end" font-family="JBM">${v ? '$' + v + 'k' : '0'}</text>`;
+  const cols = ['#5b8def', '#e8c26a', '#22c3a0', '#a37bff'];
+  REV.forEach((r, i) => {
+    const x = L + step * i + (step - bw) / 2; let acc = 0;
+    r.forEach((v, j) => { if (!v) return; const y0 = y(acc), y1 = y(acc + v); acc += v; const top = j === r.length - 1 || r.slice(j + 1).every(z => !z);
+      s += `<rect x="${x}" y="${y1 + 1}" width="${bw}" height="${Math.max(0, y0 - y1 - 1.5)}" rx="${top ? 5 : 1.5}" fill="${cols[j]}" ${i === 11 ? '' : 'opacity=".82"'}/>`; });
+    s += `<text x="${x + bw / 2}" y="${H - 8}" fill="${i === 11 ? '#f3f0ea' : '#948e98'}" font-size="11.5" font-weight="${i === 11 ? 700 : 500}" text-anchor="middle" font-family="Manrope">${MONTHS[i]}</text>`;
+    if (i === 11) s += `<text x="${x + bw / 2}" y="${y(acc) - 8}" fill="#f3f0ea" font-size="12" font-weight="700" text-anchor="middle" font-family="JBM">$50.0k</text>`;
+  });
+  return s + '</svg>';
+}
+function donut() {
+  const parts = [['Pro anual', 34, '#e8c26a'], ['Pro mensual', 22, '#d29a2c'], ['Lite anual', 16, '#5b8def'], ['Lite mensual', 18, '#3a6bd0'], ['Complementos', 10, '#22c3a0']];
+  const r = 62, c = 2 * Math.PI * r; let off = 0;
+  let s = `<svg viewBox="0 0 170 170" width="160" height="160"><circle cx="85" cy="85" r="${r}" fill="none" stroke="#221e28" stroke-width="20"/>`;
+  parts.forEach(([, v, col]) => { const len = c * v / 100; s += `<circle cx="85" cy="85" r="${r}" fill="none" stroke="${col}" stroke-width="20" stroke-dasharray="${len - 2} ${c - len + 2}" stroke-dashoffset="${-off}" transform="rotate(-90 85 85)"/>`; off += len; });
+  s += `<text x="85" y="80" text-anchor="middle" fill="#948e98" font-size="11" font-family="Manrope">por mes</text><text x="85" y="101" text-anchor="middle" fill="#f3f0ea" font-size="21" font-weight="800" font-family="Manrope">$50.0k</text></svg>`;
+  return `<div class="row" style="gap:18px">${s}<div style="display:flex;flex-direction:column;gap:9px;flex:1">${parts.map(([l, v, col]) => `<div class="row" style="gap:8px;font-size:13px"><i style="width:10px;height:10px;border-radius:3px;background:${col}"></i><span>${l}</span><span class="mono ink" style="margin-left:auto">${v}%</span></div>`).join('')}</div></div>`;
+}
+const PRICE = (v, unit, focus) => `<div class="price-in ${focus ? 'focus' : ''}"><span>$</span>${v}<em>${unit}</em></div>`;
+pages.ganancias = () => `
+${header('Ganancias', 'Lo que dejan las licencias según los precios que tú pones. Montos en MXN, sin IVA.', `<div class="row"><div class="seg"><span>30 días</span><span>Trimestre</span><span class="on">12 meses</span></div><span class="btn">${I('download')}CSV</span></div>`)}
+<div class="kpis">
+  ${kpi('t-gold', 'repeat', 'g-gold', '$50,020', 'Recurrente al mes', up('+8.6%'), '#e8c26a', [40,42,41,45,47,46,50,52,55,58])}
+  ${kpi('t-teal', 'wallet', 'g-teal', '$41,870', 'Cobrado en noviembre', `<span class="chip neutral">72%</span>`, '#22c3a0', [10,14,18,20,24,28,31,35,38,42])}
+  ${kpi('t-blue', 'calculator', 'g-blue', '$1,112', 'Por licencia al mes', up('+3.1%'), '#77a8ff', [11,11.5,11.2,12,12.1,12.4,12.3,12.6,12.8,13])}
+  ${kpi('t-red', 'shield-alert', 'g-red', '$6,370', 'En riesgo a 30 días', down('5'), '#ff4a60', [2,3,2,4,3,5,4,6,5,6])}
+</div>
+<div class="grid" style="grid-template-columns: minmax(0,1fr) 470px; flex:1">
+  <div class="grid" style="grid-template-rows: auto 1fr">
+    <section class="card">
+      <div class="card-head" style="padding-bottom:6px">${FI('chart-column', 'gold', 36)}<div><h2>Ingresos por mes</h2><p>Recurrente por plan, más los pagos únicos de licencias de por vida.</p></div>
+        <div class="right legend"><span><i style="background:#5b8def"></i>Lite</span><span><i style="background:#e8c26a"></i>Pro</span><span><i style="background:#22c3a0"></i>Complementos</span><span><i style="background:#a37bff"></i>De por vida</span></div></div>
+      <div class="card-body" style="padding-bottom:10px">${revChart()}</div>
+    </section>
+    <div class="grid" style="grid-template-columns: minmax(0,1fr) 1fr">
+      <section class="card"><div class="card-head" style="padding-bottom:8px">${FI('chart-pie', 'blue', 32)}<div><h2 style="font-size:17px">Mezcla del recurrente</h2></div></div><div class="card-body">${donut()}</div></section>
+      <section class="card"><div class="card-head" style="padding-bottom:8px">${FI('trophy', 'gold', 32)}<div><h2 style="font-size:17px">Lo que más deja</h2></div><div class="right muted" style="font-size:12px">al mes</div></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+          ${[['La Parrilla de Don Chuy', '2 sucursales · Pro', 4180, 100], ['Sushi Kaito', 'Pro mensual · vencida', 2080, 50], ['Café Tlaquepaque', 'Lite + Comanderos', 1189, 28], ['Pizzería Napoli 1987', 'Complementos', 880, 21]].map(([n, s, v, p], i) => `<div><div class="row" style="justify-content:space-between;margin-bottom:6px"><div><span class="ink" style="font-weight:650;font-size:13.5px">${n}</span> <span class="muted" style="font-size:12px">· ${s}</span></div><span class="mono ink">${money(v)}</span></div><div class="bar-h"><i style="width:${p}%;background:${i === 1 ? 'linear-gradient(90deg,#8f1325,#e1263f)' : 'linear-gradient(90deg,#a77a10,#e8c26a)'}"></i></div></div>`).join('')}
+        </div></section>
+    </div>
+  </div>
+  <section class="card" style="display:flex;flex-direction:column">
+    <div class="card-head">${FI('tags', 'red', 38)}<div><h2>Precios de licencia</h2><p>Las estadísticas se recalculan con estos montos.</p></div></div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:16px">
+      <div class="ptable">
+        <span class="h">Nivel</span><span class="h">Mensual</span><span class="h">Anual</span><span class="h">De por vida</span>
+        <div><span class="tag lite">Lite</span></div>${PRICE('899', '/mes')}${PRICE('8,990', '/año')}${PRICE('24,900', 'único')}
+        <div><span class="tag pro">Pro</span></div>${PRICE('1,690', '/mes', true)}${PRICE('16,900', '/año')}${PRICE('44,900', 'único')}
+      </div>
+      <div class="divider" style="margin:0"></div>
+      <div><div class="h3" style="margin-bottom:10px">Complementos <span class="muted" style="font-weight:500;font-size:12.5px">· por sucursal al mes</span></div>
+        <div style="display:grid;grid-template-columns:1fr 130px;gap:9px 12px;align-items:center;font-size:13.5px">
+          <span>Comanderos móviles</span>${PRICE('290', '/mes')}<span>Delivery Hub</span>${PRICE('490', '/mes')}<span>Web propia de pedidos</span>${PRICE('390', '/mes')}
+        </div></div>
+      <div class="divider" style="margin:0"></div>
+      <div><div class="h3" style="margin-bottom:10px">Combos</div>
+        <div style="display:grid;grid-template-columns:1fr 130px;gap:9px 12px;align-items:center;font-size:13.5px">
+          <span>PYME Digital <span class="muted" style="font-size:12px">· Lite + Comanderos</span></span>${PRICE('1,099', '/mes')}<span>Delivery Pro <span class="muted" style="font-size:12px">· Pro + Hub + Web</span></span>${PRICE('2,390', '/mes')}
+        </div></div>
+      <div class="stat-mini" style="display:flex;gap:12px;align-items:flex-start;background:rgba(232,194,106,.06);border-color:rgba(232,194,106,.22)">${I('info', '')}<p style="font-size:12.5px;color:var(--text)">Cuenta desde hoy: lo ya cobrado conserva su precio. Las pruebas no suman.</p></div>
+      <div class="row" style="justify-content:flex-end;margin-top:2px"><span class="btn ghost">Descartar</span><span class="btn primary">${I('check')}Guardar precios</span></div>
+    </div>
+  </section>
+</div>`;
+
+/* ───────── Versiones ───────── */
+pages.versiones = () => `
+${header('Versiones', 'Sube un paquete, se firma en el servidor y decides a qué licencias llega.', `<div class="row"><span class="btn primary">${I('upload')}Subir versión</span></div>`)}
+<div class="kpis">
+  ${kpi('t-violet', 'layers', 'g-violet', '3', 'Listas para publicar', go, '#a37bff', [1,2,2,3,2,3,4,3,2,3])}
+  ${kpi('t-teal', 'radio-tower', 'g-teal', '0.3.03', 'Publicada a todas', `<span class="chip up">${I('check')}41 de 48</span>`, '#22c3a0', [5,12,20,26,31,35,37,39,40,41])}
+  ${kpi('t-amber', 'history', 'g-amber', '7', 'Sucursales en 0.3.02', go, '#f2a93b', [30,26,22,18,15,12,10,9,8,7])}
+  ${kpi('t-blue', 'hard-drive', 'g-blue', '412<small>MB</small>', 'Espacio en R2', '', '#77a8ff', [120,160,200,210,260,300,330,360,390,412])}
+</div>
+<div class="grid" style="grid-template-columns: minmax(0,1fr) 400px; flex:1">
+  <section class="card">
+    <div class="card-head">${FI('package-open', 'violet', 38)}<div><h2>Paquetes</h2><p>Cada archivo lleva su firma y su SHA-512.</p></div><div class="right"><div class="seg"><span class="on">Todas</span><span>CulinaryOS</span><span>Admin</span><span>Dueño</span></div></div></div>
+    <div class="card-body">
+      <div class="drop" style="margin-bottom:14px">${T3('cloud-upload', 'g-violet', 48)}<div style="flex:1"><div class="row" style="justify-content:space-between"><b class="ink">CulinaryRestaurant-0.3.04-amd64.deb</b><span class="mono muted">61.3 / 84.6 MB</span></div><div class="prog" style="margin:9px 0 6px"><i style="width:72%"></i></div><small class="muted">Subiendo por partes · quedan unos 40 s · al terminar se firma solo</small></div><span class="btn sm">${I('x')}Cancelar</span></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Versión</th><th>Plataforma</th><th>Archivo</th><th>Tamaño</th><th>Estado</th><th class="r"></th></tr></thead><tbody>
+        <tr class="sel"><td class="num">0.3.03</td><td>Servidor CulinaryOS</td><td class="sub">CulinaryRestaurant-0.3.03-amd64.deb</td><td class="num">83.9 MB</td><td>${pill('ok', 'Publicada')}</td><td class="r"><span class="btn sm">${I('undo-2')}Retirar</span></td></tr>
+        <tr><td class="num">0.1.6</td><td>Culinary Admin</td><td class="sub">Culinary Admin_0.1.6_x64-setup.exe</td><td class="num">11.2 MB</td><td>${pill('info', 'Lista')}</td><td class="r"><span class="btn sm">${I('send')}Publicar</span></td></tr>
+        <tr><td class="num">0.1.0</td><td>Culinary Dueño · Android</td><td class="sub">CulinaryDueno-0.1.0-android-arm64.apk</td><td class="num">18.4 MB</td><td>${pill('info', 'Lista')}</td><td class="r"><span class="btn sm">${I('send')}Publicar</span></td></tr>
+        <tr><td class="num">0.1.0</td><td>Culinary Dueño · Windows</td><td class="sub">CulinaryDueno-0.1.0-windows-x64-setup.exe</td><td class="num">9.7 MB</td><td>${pill('info', 'Lista')}</td><td class="r"><span class="btn sm">${I('send')}Publicar</span></td></tr>
+        <tr><td class="num">0.3.02</td><td>Servidor CulinaryOS</td><td class="sub">CulinaryRestaurant-0.3.02-amd64.deb</td><td class="num">83.9 MB</td><td>${pill('idle', 'Reemplazada')}</td><td class="r"><span class="btn sm dots">${I('ellipsis')}</span></td></tr>
+      </tbody></table></div>
+    </div>
+  </section>
+  <section class="card drawer">
+    <div class="row" style="justify-content:space-between"><span class="mono muted">0.3.03 · servidor</span>${pill('ok', 'Publicada')}</div>
+    <h2 style="font-size:21px;color:var(--ink);font-weight:800;margin-top:6px">Culinary Restaurant 0.3.03</h2>
+    <p class="muted">Subida el 1 nov. 2026 · firmada con la llave intermedia</p><p class="muted" style="margin-top:4px">SHA-512 <code>9f3a1c…e07b</code></p>
+    <div class="divider"></div>
+    <div class="h3" style="margin-bottom:8px">Notas</div>
+    <ul style="padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:13px"><li>Reportes de fallos hacia el proveedor.</li><li>Buscar actualización desde Versión.</li><li>Aviso cuando hay una versión publicada.</li></ul>
+    <div class="divider"></div>
+    <div class="h3" style="margin-bottom:10px">Adopción</div>
+    <div class="row" style="justify-content:space-between;font-size:13px;margin-bottom:6px"><span>Instalada</span><span class="mono ink">41 / 48</span></div><div class="prog"><i style="width:85%;background:linear-gradient(90deg,#0e8c70,#3fe0b8)"></i></div>
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px;margin-top:14px"><div class="stat-mini"><small>Publicada para</small><b>Todas</b></div><div class="stat-mini"><small>Desde</small><b class="mono" style="font-size:16px">1 nov. 18:40</b></div></div>
+    <div class="divider"></div>
+    <div class="h3" style="margin-bottom:8px">Pendientes de instalar</div>
+    ${['Sushi Kaito · vencida', 'Mariscos El Faro', 'Birria Don Nacho', 'El Rincón Vegano'].map(n => `<div class="row" style="justify-content:space-between;font-size:13px;padding:5px 0"><span>${n}</span><code class="muted">0.3.02</code></div>`).join('')}
+  </section>
+</div>`;
+
+/* ───────── Soporte ───────── */
+pages.soporte = () => `
+${header('Soporte', 'Preguntas que mandan las sucursales desde Culinary Restaurant.', `<div class="row"><div class="seg"><span class="on">Abiertos <b>6</b></span><span>Respondidos <b>11</b></span><span>Cerrados <b>132</b></span></div></div>`)}
+<div class="grid" style="grid-template-columns: 400px 1fr 300px; flex:1">
+  <section class="card" style="overflow:hidden">
+    <div class="card-head" style="padding-bottom:12px"><div class="field-s" style="flex:1">${I('search')}Buscar en tickets</div></div>
+    ${[['Sushi Kaito', 'No puedo renovar, la pantalla dice bloqueada', 'hace 6 min', 'bad', 'Urgente', 1],
+       ['Mariscos El Faro', 'La impresora de cocina saca hojas en blanco', 'hace 42 min', 'warn', 'Abierto'],
+       ['Café Tlaquepaque', '¿Cómo agrego un comandero nuevo?', 'hace 2 h', 'warn', 'Abierto'],
+       ['El Rincón Vegano', 'El corte Z no cuadra por $35', 'hace 3 h', 'warn', 'Abierto'],
+       ['Birria Don Nacho', 'Cambiar el nombre de la sucursal', 'ayer', 'warn', 'Abierto'],
+       ['Tacos Los Primos', 'No me llegó el código de activación', 'ayer', 'warn', 'Abierto'],
+       ['La Parrilla de Don Chuy', 'Gracias, ya quedó la mesa 12', 'lun.', 'ok', 'Respondido']]
+      .map(([c, s, t, k, l, on]) => `<div class="ticket ${on ? 'on' : ''}"><div class="row1"><b>${c}</b>${pill(k, l)}<time>${t}</time></div><p>${s}</p></div>`).join('')}
+  </section>
+  <section class="card" style="display:flex;flex-direction:column">
+    <div class="card-head" style="border-bottom:1px solid var(--line)"><div><h2 style="font-size:18px">No puedo renovar, la pantalla dice bloqueada</h2><p>Sushi Kaito · Zapopan · <code>kaito-zap</code> · LC-0029</p></div><div class="right"><span class="btn sm">${I('check-check')}Cerrar ticket</span></div></div>
+    <div style="flex:1;padding:20px;display:flex;flex-direction:column;gap:14px">
+      <div><div class="msg them">Buenas tardes, desde el jueves la caja muestra «Licencia vencida» y no deja cobrar. Ya hicimos la transferencia del mes.</div><div class="msg-meta">Sucursal · 3 nov. 19:58</div></div>
+      <div><div class="msg them">Adjunto el comprobante por correo. ¿Me la pueden reactivar hoy? Tenemos servicio en la noche.</div><div class="msg-meta">Sucursal · 3 nov. 20:01</div></div>
+      <div><div class="msg us">Hola, ya vi el pago. En cuanto renueve la licencia, la caja la toma sola en menos de un minuto si tiene internet. Le aviso por aquí.</div><div class="msg-meta r">PizzaDev · 3 nov. 20:06</div></div>
+    </div>
+    <div style="padding:16px 20px;border-top:1px solid var(--line)">
+      <div style="min-height:84px;border-radius:12px;background:#0e0c11;border:1px solid var(--red);box-shadow:0 0 0 3px rgba(225,38,63,.18);padding:12px 14px;color:var(--ink);font-size:13.5px">Listo, la renové hasta el 3 de diciembre. Si en 2 minutos sigue bloqueada, reinicie la caja desde Ajustes ▸ Versión.<span style="display:inline-block;width:2px;height:16px;background:var(--red-2);vertical-align:-3px;margin-left:1px"></span></div>
+      <div class="row" style="margin-top:12px;justify-content:space-between"><span class="muted" style="font-size:12px">La sucursal lo ve en su bandeja de soporte.</span><span class="btn primary">${I('send-horizontal')}Responder</span></div>
+    </div>
+  </section>
+  <section class="card drawer">
+    <div class="h3">Sucursal</div>
+    <dl class="kv" style="grid-template-columns:96px 1fr;margin-top:10px"><dt>Licencia</dt><dd class="mono">LC-0029</dd><dt>Estado</dt><dd>${pill('bad', 'Vencida')}</dd><dt>Venció</dt><dd class="mono">30 oct. 2026</dd><dt>Plan</dt><dd><span class="tag pro">Pro</span> Mensual</dd><dt>Versión</dt><dd class="mono">0.3.02</dd><dt>Validó</dt><dd class="mono">hace 4 días</dd></dl>
+    <div class="divider"></div>
+    <span class="btn primary" style="justify-content:center">${I('refresh-cw')}Renovar un mes</span>
+    <span class="btn" style="justify-content:center;margin-top:8px">${I('key-round')}Abrir licencia</span>
+    <div class="divider"></div>
+    <div class="h3" style="margin-bottom:8px">Tickets anteriores</div>
+    ${[['Error al imprimir ticket', 'Cerrado · sep.'], ['Alta de mesero', 'Cerrado · ago.']].map(([a, b]) => `<div style="padding:6px 0;font-size:13px"><div class="ink">${a}</div><div class="muted" style="font-size:12px">${b}</div></div>`).join('')}
+  </section>
+</div>`;
+
+/* ───────── Fallos ───────── */
+pages.fallos = () => `
+${header('Fallos', 'Errores que las sucursales reportan solas, agrupados por causa.', `<div class="row"><div class="seg"><span class="on">Sin resolver <b>2</b></span><span>Resueltos <b>19</b></span></div></div>`)}
+<div class="kpis">
+  ${kpi('t-red', 'octagon-alert', 'g-red', '1', 'Crítico', go, '#ff4a60', [0,0,1,0,0,1,0,0,0,1])}
+  ${kpi('t-amber', 'triangle-alert', 'g-amber', '1', 'Error', go, '#f2a93b', [1,2,1,0,2,1,1,3,1,1])}
+  ${kpi('t-violet', 'store', 'g-violet', '2', 'Sucursales afectadas', '', '#a37bff', [1,1,2,1,1,2,1,2,2,2])}
+  ${kpi('t-teal', 'activity', 'g-teal', '37', 'Veces en 24 h', down('-21%'), '#22c3a0', [60,55,58,50,47,49,44,41,39,37])}
+</div>
+<div class="grid" style="grid-template-columns: minmax(0,1fr) 470px; flex:1">
+  <section class="card">
+    <div class="card-head">${FI('bug', 'red', 38)}<div><h2>Reportes</h2><p>Una fila por causa; se suman las repeticiones.</p></div><div class="right"><div class="field-s" style="width:230px">${I('search')}Sucursal o mensaje</div></div></div>
+    <div class="card-body"><div class="tbl-wrap"><table><thead><tr><th>Gravedad</th><th>Qué pasó</th><th>Sucursal</th><th>Versión</th><th class="r">Veces</th><th>Última</th></tr></thead><tbody>
+      <tr class="sel"><td>${pill('bad', 'Crítico')}</td><td><div class="main-t">No se pudo cerrar el corte Z</div><div class="sub">Caja · ShiftSummary</div></td><td>Sushi Kaito</td><td class="num">0.3.02</td><td class="num r">29</td><td class="num">hace 8 min</td></tr>
+      <tr><td>${pill('warn', 'Error')}</td><td><div class="main-t">La impresora no respondió</div><div class="sub">Impresión · cocina</div></td><td>Mariscos El Faro</td><td class="num">0.3.03</td><td class="num r">8</td><td class="num">hace 41 min</td></tr>
+      <tr><td>${pill('ok', 'Resuelto')}</td><td><div class="main-t">Sin conexión con la central</div><div class="sub">Sincronización</div></td><td>La Parrilla · Andares</td><td class="num">0.3.03</td><td class="num r">112</td><td class="num">ayer</td></tr>
+      <tr><td>${pill('ok', 'Resuelto')}</td><td><div class="main-t">Token de Delivery Hub vencido</div><div class="sub">Integraciones</div></td><td>Pizzería Napoli 1987</td><td class="num">0.3.03</td><td class="num r">4</td><td class="num">31 oct.</td></tr>
+      <tr><td>${pill('ok', 'Resuelto')}</td><td><div class="main-t">Disco con menos de 1 GB libre</div><div class="sub">Sistema</div></td><td>Birria Don Nacho</td><td class="num">0.3.02</td><td class="num r">2</td><td class="num">28 oct.</td></tr>
+    </tbody></table></div></div>
+  </section>
+  <section class="card drawer">
+    <div class="row" style="justify-content:space-between">${pill('bad', 'Crítico')}<span class="mono muted">29 veces · desde 1 nov.</span></div>
+    <h2 style="font-size:21px;color:var(--ink);font-weight:800;margin-top:8px">No se pudo cerrar el corte Z</h2>
+    <p class="muted">Sushi Kaito · Zapopan · <code>kaito-zap</code></p>
+    <div class="divider"></div>
+    <dl class="kv" style="grid-template-columns:110px 1fr"><dt>Afecta</dt><dd>No se puede cerrar el turno ni cobrar después de medianoche.</dd><dt>Origen</dt><dd><code>caja.cierre</code></dd><dt>Plataforma</dt><dd>CulinaryOS · amd64</dd><dt>Versión</dt><dd class="mono">0.3.02</dd></dl>
+    <div class="divider"></div>
+    <div class="h3" style="margin-bottom:8px">Contexto</div>
+    <div class="snip">turno       T-2026-1102-02
+abierto     2 nov. 2026 18:02
+cuentas     3 abiertas
+error       la licencia venció a mitad
+            del turno
+reintentos  29</div>
+    <div class="row" style="margin-top:16px;gap:10px"><span class="btn primary" style="flex:1;justify-content:center">${I('check')}Marcar resuelto</span><span class="btn">${I('headset')}Ticket</span><span class="btn dots">${I('copy')}</span></div>
+  </section>
+</div>`;
+
+/* ───────── Sucursales ───────── */
+pages.sucursales = () => `
+${header('Sucursales', 'Sucursales con su certificado mTLS para la central multiempresa.', `<div class="row"><div class="field-s" style="width:260px">${I('search')}Empresa, sucursal o siteId</div></div>`)}
+<div class="kpis">
+  ${kpi('t-violet', 'store', 'g-violet', '24', 'Sucursales', up('+3'), '#a37bff', [14,15,16,17,18,19,20,21,22,24])}
+  ${kpi('t-teal', 'shield-check', 'g-teal', '21', 'Con certificado', '', '#22c3a0', [10,12,13,15,16,17,18,19,20,21])}
+  ${kpi('t-amber', 'file-question', 'g-amber', '3', 'Sin certificado', go, '#f2a93b', [4,3,4,3,2,3,4,3,3,3])}
+  ${kpi('t-blue', 'building-2', 'g-blue', '18', 'Empresas', '', '#77a8ff', [10,11,12,13,14,14,15,16,17,18])}
+</div>
+<div class="grid" style="grid-template-columns: minmax(0,1fr) 440px; flex:1">
+  <section class="card">
+    <div class="card-head">${FI('network', 'violet', 38)}<div><h2>Registro</h2><p>Una sucursal aparece al activar su licencia y registrar su certificado.</p></div></div>
+    <div class="card-body"><div class="tbl-wrap"><table><thead><tr><th>Empresa</th><th>Sucursal</th><th>Sitio</th><th>Certificado</th><th>Licencia</th><th class="r"></th></tr></thead><tbody>
+      ${[['La Parrilla de Don Chuy', 'parrilla-chuy', 'Centro', 'lpdc-centro', '3f9a0c12be41', 'ok', 'Activa', 1],
+         ['La Parrilla de Don Chuy', 'parrilla-chuy', 'Andares', 'lpdc-andares', 'a71c55e0d9f2', 'ok', 'Activa'],
+         ['Pizzería Napoli 1987', 'napoli', 'Americana', 'napoli-1987', '0be7d4a1c388', 'ok', 'Activa'],
+         ['Sushi Kaito', 'kaito', 'Zapopan', 'kaito-zap', '5d2e9f7a0b61', 'bad', 'Vencida'],
+         ['Café Tlaquepaque', 'cafe-tlaq', 'Jardín', 'cafe-tlaq', '9c4b1e8f2a07', 'ok', 'Activa'],
+         ['Tacos Los Primos', 'primos', 'Providencia', 'primos-prov', null, 'idle', 'Sin activar'],
+         ['Mariscos El Faro', 'faro', 'Chapalita', 'faro-chapalita', 'e1f0a6c3d855', 'warn', 'Por vencer']]
+        .map(([e, t, s, site, cert, k, l, on]) => `<tr class="${on ? 'sel' : ''}"><td><div class="main-t">${e}</div><div class="sub"><code style="font-size:11.5px">${t}</code></div></td><td>${s}</td><td><code>${site}</code></td><td>${cert ? `<code class="muted">${cert}…</code>` : '<span class="sub">Sin registrar</span>'}</td><td>${pill(k, l)}</td><td class="r"><span class="btn sm" ${cert ? '' : 'style="opacity:.4"'}>${I('file-json')}Aprovisionar</span></td></tr>`).join('')}
+    </tbody></table></div></div>
+  </section>
+  <section class="card drawer">
+    <div class="row" style="gap:14px">${T3('store', 'g-violet', 52)}<div><h2 style="font-size:19px;color:var(--ink);font-weight:800">Centro</h2><p class="muted">La Parrilla de Don Chuy</p></div></div>
+    <div class="divider"></div>
+    <dl class="kv" style="grid-template-columns:110px 1fr"><dt>Sitio</dt><dd><code>lpdc-centro</code></dd><dt>Huella del cert.</dt><dd><code style="font-size:11.5px">3f9a0c12be41…77d0</code></dd><dt>Funciones</dt><dd>Reservaciones, Impresión, Varias sucursales</dd></dl>
+    <div class="divider"></div>
+    <div class="h3" style="margin-bottom:8px">Datos para la central</div>
+    <div class="snip">{
+  "tenantId": "parrilla-chuy",
+  "tenantName": "La Parrilla de Don Chuy",
+  "branchId": "lpdc-centro",
+  "slug": "centro",
+  "certificateSha256": "3f9a0c12…",
+  "ownerUsername": "",
+  "ownerPassword": ""
+}</div>
+    <p class="muted" style="font-size:12px;margin-top:10px">Completa al dueño y ejecuta <code>MesaNexo.Central --provision-tenant archivo.json</code>.</p>
+    <div class="row" style="margin-top:12px;gap:10px"><span class="btn primary" style="flex:1;justify-content:center">${I('copy')}Copiar JSON</span><span class="btn">${I('download')}Descargar</span></div>
+  </section>
+</div>`;
+
+/* ───────── Panel del dueño ───────── */
+pages.dueno = () => `
+${header('Panel del dueño', 'Cuentas de Culinary Dueño: el dueño ve todo su negocio y un gerente sólo lo que le asignes.', `<div class="row"><span class="btn primary">${I('user-plus')}Invitar</span></div>`)}
+<div class="kpis">
+  ${kpi('t-gold', 'crown', 'g-gold', '17', 'Cuentas de dueño', up('+2'), '#e8c26a', [8,9,10,11,12,13,14,15,16,17])}
+  ${kpi('t-blue', 'user-cog', 'g-blue', '9', 'Gerentes', '', '#77a8ff', [3,4,4,5,6,6,7,8,8,9])}
+  ${kpi('t-amber', 'mail-question', 'g-amber', '2', 'Sin confirmar', go, '#f2a93b', [1,0,1,2,1,1,0,1,2,2])}
+  ${kpi('t-teal', 'smartphone', 'g-teal', '74%', 'Entran cada semana', up('+6 pts'), '#22c3a0', [50,52,55,58,60,63,66,68,71,74])}
+</div>
+<div class="grid" style="grid-template-columns: 400px minmax(0,1fr); flex:1">
+  <section class="card">
+    <div class="card-head">${FI('building-2', 'gold', 38)}<div><h2>Negocio</h2><p>Las sucursales que comparten empresa.</p></div></div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+      <div class="field-s" style="justify-content:space-between;color:var(--ink)"><span>La Parrilla de Don Chuy</span>${I('chevrons-up-down')}</div>
+      ${[['Centro', 'pro', 'lpdc-centro'], ['Andares', 'pro', 'lpdc-andares']].map(([n, t, s]) => `<div class="keyplate" style="padding:14px 16px"><div class="row" style="justify-content:space-between"><div><b class="ink">${n}</b><div class="muted mono" style="font-size:11.5px">${s}</div></div><span class="tag ${t}">${t === 'pro' ? 'Pro' : 'Lite'}</span></div></div>`).join('')}
+      <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
+        <div class="stat-mini" style="border-color:rgba(79,141,247,.25)"><span class="tag lite">Lite</span><p style="font-size:12px;margin-top:8px">Ventas, ticket promedio, comensales y más vendidos. Mes en curso y 7 días.</p></div>
+        <div class="stat-mini" style="border-color:rgba(232,194,106,.28)"><span class="tag pro">Pro</span><p style="font-size:12px;margin-top:8px">Todo el panel: productos, caja y personal, sin límite de fechas.</p></div>
+      </div>
+    </div>
+  </section>
+  <section class="card">
+    <div class="card-head">${FI('users', 'gold', 38)}<div><h2>Cuentas</h2><p>Si alguien pierde su teléfono, borra su cuenta y vuelve a invitarlo.</p></div></div>
+    <div class="card-body"><div class="tbl-wrap"><table><thead><tr><th>Correo</th><th>Rol</th><th>Sucursales</th><th>Estado</th><th>Último acceso</th><th class="r"></th></tr></thead><tbody>
+      <tr><td class="main-t">jesus.ramirez@parrilladonchuy.mx</td><td><span class="tag pro">Dueño</span></td><td>Todas</td><td>${pill('ok', 'Activa')}</td><td class="num">hace 20 min</td><td class="r"><span class="btn sm danger">${I('user-x')}Borrar</span></td></tr>
+      <tr><td class="main-t">gerencia.centro@parrilladonchuy.mx</td><td><span class="tag">Gerente</span></td><td>Centro</td><td>${pill('ok', 'Activa')}</td><td class="num">ayer</td><td class="r"><span class="btn sm danger">${I('user-x')}Borrar</span></td></tr>
+      <tr><td class="main-t">andares@parrilladonchuy.mx</td><td><span class="tag">Gerente</span></td><td>Andares</td><td>${pill('warn', 'Sin confirmar')}</td><td class="num">—</td><td class="r"><span class="btn sm danger">${I('user-x')}Borrar</span></td></tr>
+    </tbody></table></div>
+    <div class="drop" style="margin-top:16px;border-style:solid;border-color:rgba(232,194,106,.25);background:rgba(232,194,106,.04)">${T3('smartphone', 'g-gold', 52)}<div style="flex:1"><b class="ink">Invitación de un solo uso</b><p class="muted" style="font-size:12.5px;margin-top:3px">El código se muestra una vez. La persona crea su contraseña y su autenticador en la app Culinary Dueño, en Android o Windows.</p></div><span class="btn tint-gold">${I('user-plus')}Invitar gerente</span></div>
+    </div>
+  </section>
+</div>`;
+
+/* ───────── Equipo y seguridad ───────── */
+pages.equipo = () => `
+${header('Equipo y seguridad', 'Cada cuenta es un equipo con su llave. Para usar otra computadora, invítala y borra la anterior.', `<div class="row"><span class="btn">${I('key-round')}Cambiar contraseña</span><span class="btn primary">${I('user-plus')}Invitar a otro equipo</span></div>`)}
+<div class="kpis">
+  ${kpi('t-violet', 'monitor-smartphone', 'g-violet', '2', 'Equipos con llave', '', '#a37bff', [1,1,1,1,1,2,2,2,2,2])}
+  ${kpi('t-teal', 'fingerprint', 'g-teal', '3', 'Factores al entrar', `<span class="chip up">${I('check')}Llave · clave · código</span>`, '#22c3a0', [3,3,3,3,3,3,3,3,3,3])}
+  ${kpi('t-amber', 'timer', 'g-amber', '6 h 12', 'Le quedan a tu sesión', '', '#f2a93b', [8,7.5,7,6.8,6.6,6.5,6.4,6.3,6.25,6.2])}
+  ${kpi('t-red', 'lock', 'g-red', '0', 'Bloqueos en 7 días', '', '#ff4a60', [1,0,0,2,0,0,1,0,0,0])}
+</div>
+<div class="grid" style="grid-template-columns: minmax(0,1fr) 1fr; flex:1">
+  <div class="grid" style="grid-template-rows:auto 1fr">
+    <section class="card">
+      <div class="card-head">${FI('users', 'violet', 38)}<div><h2>Equipos</h2><p>La llave no se puede exportar: vive en el equipo.</p></div></div>
+      <div class="card-body"><div class="tbl-wrap"><table><thead><tr><th>Usuario</th><th>Equipo</th><th>Llave</th><th>Desde</th><th>Estado</th><th class="r"></th></tr></thead><tbody>
+        <tr><td class="main-t">PizzaDev <span class="sub">· tú</span></td><td style="white-space:nowrap">Escritorio-Oficina</td><td><code>Ed25519</code></td><td class="num">1 nov. 2026</td><td>${pill('ok', 'Activa')}</td><td></td></tr>
+        <tr><td class="main-t">PizzaDev-laptop</td><td style="white-space:nowrap">Laptop-Kikin</td><td><code>ES256</code></td><td class="num">3 nov. 2026</td><td>${pill('warn', 'Sin confirmar')}</td><td class="r"><span class="btn sm danger">${I('user-x')}Borrar</span></td></tr>
+      </tbody></table></div></div>
+    </section>
+    <section class="card">
+      <div class="card-head">${FI('key-square', 'red', 38)}<div><h2>Llave raíz pública</h2><p>La que Culinary Restaurant lleva incrustada. La privada nunca sale del servidor.</p></div><div class="right"><code class="muted">kid 7c1e…a90d</code></div></div>
+      <div class="card-body"><div class="snip">-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEA3v9pQ1Zr7kXb2wF0mLq8sYtN4cEoH6jU
+-----END PUBLIC KEY-----</div><div class="row" style="margin-top:12px;gap:10px"><span class="btn sm">${I('copy')}Copiar</span><span class="muted" style="font-size:12px">Se usa al compilar: tools/build.ps1 -RootPublicKey</span></div></div>
+    </section>
+  </div>
+  <section class="card">
+    <div class="card-head">${FI('scroll-text', 'violet', 38)}<div><h2>Bitácora</h2><p>Cada cambio hecho desde el panel, firmado por su equipo.</p></div><div class="right"><div class="seg"><span class="on">Todo</span><span>Licencias</span><span>Equipo</span></div></div></div>
+    <div class="card-body"><div class="tbl-wrap"><table><thead><tr><th>Cuándo</th><th>Quién</th><th>Acción</th><th>Sobre</th></tr></thead><tbody>
+      ${[['3 nov. 20:14', 'PizzaDev', 'license.renew', 'LC-0041', 'hasta 14 mar. 2027'],
+         ['3 nov. 19:02', 'PizzaDev', 'admin.invite', 'Laptop-Kikin', 'vence en 24 h'],
+         ['3 nov. 17:40', 'PizzaDev', 'owner.invite', 'andares@…', 'Gerente · Andares'],
+         ['2 nov. 22:11', 'PizzaDev', 'fault.resolve', 'Sin conexión…', 'La Parrilla · Andares'],
+         ['2 nov. 13:25', 'PizzaDev', 'license.create', 'LC-0044', 'Prueba 14 días · Pro'],
+         ['1 nov. 18:40', 'PizzaDev', 'release.publish', '0.3.03', 'todas las licencias'],
+         ['1 nov. 18:31', 'Sistema', 'release.sign', '0.3.03', 'SHA-512 9f3a1c…'],
+         ['1 nov. 09:12', 'PizzaDev', 'license.revoke', 'LC-0019', 'cerró el negocio']]
+        .map(([a, b, c, d, e]) => `<tr><td class="num">${a}</td><td>${b}</td><td><code style="color:${c.includes('revoke') ? 'var(--red-ink)' : 'var(--ink)'}">${c}</code></td><td><div class="main-t" style="font-size:13px">${d}</div><div class="sub">${e}</div></td></tr>`).join('')}
+    </tbody></table></div></div>
+  </section>
+</div>`;
+
+document.getElementById('page').innerHTML = pages[P]();
+lucide.createIcons({ attrs: { 'stroke-width': 1.9 } });
+document.fonts.ready.then(() => document.body.dataset.ready = '1');
+</script>
+</body>
+</html>

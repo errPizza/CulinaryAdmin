@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { UserPlus, UserX } from 'lucide-react';
+import { Building2, Crown, Smartphone, Store, UserPlus, UserX, Users } from 'lucide-react';
 import * as api from './api';
-import { Dialog, Empty, Secret, SkeletonRows, State, day, moment, useLoad, useSubmit, useToast } from './ui';
+import { Card, Dialog, Empty, Kpi, Masthead, Secret, SkeletonRows, State, Tile, day, moment, useLoad, useSubmit, useToast } from './ui';
 
 type Business = { tenantId: string; customer: string; branches: api.License[] };
 
@@ -18,39 +18,68 @@ function businesses(licenses: api.License[]): Business[] {
 export function Owners({ me }: { me: string }) {
 
     const licenses = useLoad(api.licenses);
-    const list = useMemo(() => businesses(licenses.data?.licenses ?? []), [licenses.data]);
+    const all = licenses.data?.licenses ?? [];
+    const list = useMemo(() => businesses(all), [licenses.data]); // eslint-disable-line react-hooks/exhaustive-deps
     const [tenant, setTenant] = useState('');
     const chosen = list.find(b => b.tenantId === tenant) ?? list[0];
     const accounts = useLoad(() => chosen ? api.ownerAccounts(chosen.tenantId) : Promise.resolve({ accounts: [] }), [chosen?.tenantId]);
     const [inviting, setInviting] = useState(false), [removing, setRemoving] = useState<api.OwnerAccount | null>(null);
     const { busy, error, submit } = useSubmit(), toast = useToast();
     const branchName = (id: string) => chosen?.branches.find(b => b.id === id)?.branchName ?? 'Sucursal eliminada';
+    const live = all.filter(l => l.status !== 'revoked');
 
     return <div className="page">
 
-        <div className="page-head"><h1>Panel del dueño</h1><button className="btn primary" disabled={!chosen} onClick={() => setInviting(true)}><UserPlus size={16} />Invitar</button>
-
-            <p>Cuentas de Culinary Dueño. El dueño ve todas las sucursales de su negocio y un gerente sólo las que le asignes. Si alguien pierde su contraseña o su teléfono, borra su cuenta e invítalo de nuevo.</p></div>
+        <Masthead title="Panel del dueño" sub="Cuentas de Culinary Dueño: el dueño ve todo su negocio y un gerente sólo las sucursales que le asignes."><button className="btn primary" disabled={!chosen} onClick={() => setInviting(true)}><UserPlus size={17} />Invitar</button></Masthead>
 
         {(licenses.error || accounts.error) && <div className="error" role="alert">{licenses.error || accounts.error}</div>}
+
+        <div className="kpis">
+
+            <Kpi tone="gold" icon={Building2} value={licenses.data ? list.length : '—'} label="Negocios" />
+            <Kpi tone="gold" icon={Crown} value={licenses.data ? live.filter(l => l.tier === 'pro').length : '—'} label="Sucursales Pro" />
+            <Kpi tone="blue" icon={Store} value={licenses.data ? live.filter(l => l.tier === 'lite').length : '—'} label="Sucursales Lite" />
+            <Kpi tone="teal" icon={Smartphone} value={accounts.data ? accounts.data.accounts.length : '—'} label={chosen ? `Cuentas de ${chosen.customer}` : 'Cuentas'} />
+
+        </div>
+
         {licenses.data && !list.length && <div className="panel"><Empty title="Sin negocios" text="Un negocio aparece cuando tiene al menos una licencia." /></div>}
 
-        {chosen && <>
+        {chosen && <div className="with-side" style={{ gridTemplateColumns: '400px minmax(0, 1fr)' }}>
 
-            <div className="panel"><div className="panel-body owners-head">
+            <Card icon={Building2} tone="gold" title="Negocio" sub="Las sucursales que comparten empresa.">
 
-                <label className="field">Negocio<select className="input" value={chosen.tenantId} onChange={e => setTenant(e.target.value)}>{list.map(b => <option key={b.tenantId} value={b.tenantId}>{b.customer}</option>)}</select></label>
-                <div><small className="cell-sub">Lo que ve cada sucursal en el panel</small><ul className="owner-branches">{chosen.branches.map(b => <li key={b.id}><span>{b.branchName}</span><b>{api.TIERS[b.tier].label}</b></li>)}</ul></div>
-                <p className="cell-sub">Lite: ventas, ticket promedio, comensales, ranking, comparación con ayer y más vendidos, del mes en curso y los últimos 7 días. Pro: todo el panel, sin límite de fechas.</p>
+                <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-            </div></div>
+                    <label className="field">Negocio<select className="input" value={chosen.tenantId} onChange={e => setTenant(e.target.value)}>{list.map(b => <option key={b.tenantId} value={b.tenantId}>{b.customer}</option>)}</select></label>
+                    <div className="owner-branches" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>{chosen.branches.map(b => <div className="keyplate" key={b.id} style={{ padding: '13px 16px' }}><div className="split-line"><div><b style={{ color: 'var(--ink)' }}>{b.branchName}</b><div className="num cell-sub">{b.siteId}</div></div><span className={'tag ' + b.tier}>{api.TIERS[b.tier].label}</span></div></div>)}</div>
+                    <div className="two" style={{ gap: 10 }}>
+                        <div className="stat"><span className="tag lite">Lite</span><p style={{ fontSize: 12.5, marginTop: 8 }}>Ventas, ticket promedio, comensales, ranking y más vendidos. Mes en curso y últimos 7 días.</p></div>
+                        <div className="stat"><span className="tag pro">Pro</span><p style={{ fontSize: 12.5, marginTop: 8 }}>Todo el panel: productos, caja y personal, sin límite de fechas.</p></div>
+                    </div>
 
-            <div className="panel table-scroll">{accounts.data && !accounts.data.accounts.length ? <Empty title="Sin cuentas" text="Invita al dueño para que vea sus ventas desde su teléfono o su computadora." /> : <table><thead><tr><th>Correo</th><th>Rol</th><th>Sucursales</th><th>Estado</th><th>Desde</th><th /></tr></thead><tbody>
+                </div>
 
-                {!accounts.data && !accounts.error && <SkeletonRows cols={6} rows={2} />}
-                {accounts.data?.accounts.map(a => <tr key={a.id}><td className="cell-main">{a.email}</td><td>{api.ROLES[a.role]}</td><td>{a.role === 'owner' ? 'Todas' : a.licenseIds.map(branchName).join(', ')}</td><td><State value={a.active ? 'active' : 'pending'} label={a.active ? 'Activa' : 'Sin confirmar'} /></td><td className="num">{day(a.createdAt)}</td><td style={{ textAlign: 'right' }}><button className="btn sm danger" onClick={() => setRemoving(a)}><UserX size={14} />Borrar</button></td></tr>)}</tbody></table>}</div>
+            </Card>
 
-        </>}
+            <Card icon={Users} tone="gold" title="Cuentas" sub="Si alguien pierde su contraseña o su teléfono, borra su cuenta e invítalo de nuevo.">
+
+                <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                    <div className="table-wrap">{accounts.data && !accounts.data.accounts.length ? <Empty title="Sin cuentas" text="Invita al dueño para que vea sus ventas desde su teléfono o su computadora." /> : <table><thead><tr><th>Correo</th><th>Rol</th><th>Sucursales</th><th>Estado</th><th>Desde</th><th className="r"><span className="sr">Acciones</span></th></tr></thead><tbody>
+
+                        {!accounts.data && !accounts.error && <SkeletonRows cols={6} rows={2} />}
+                        {accounts.data?.accounts.map(a => <tr key={a.id}><td className="cell-main">{a.email}</td><td><span className={'tag' + (a.role === 'owner' ? ' pro' : '')}>{api.ROLES[a.role]}</span></td><td>{a.role === 'owner' ? 'Todas' : a.licenseIds.map(branchName).join(', ')}</td><td><State value={a.active ? 'active' : 'pending'} label={a.active ? 'Activa' : 'Sin confirmar'} /></td><td className="num nowrap">{day(a.createdAt)}</td><td className="r"><button className="btn sm danger" onClick={() => setRemoving(a)}><UserX size={14} />Borrar</button></td></tr>)}
+
+                    </tbody></table>}</div>
+
+                    <div className="note" style={{ alignItems: 'center' }}><Tile icon={Smartphone} tone="gold" size={46} /><p style={{ flex: 1 }}><b style={{ color: 'var(--ink)' }}>Invitación de un solo uso.</b> El código se muestra una vez; la persona crea su contraseña y su autenticador en Culinary Dueño, en Android o Windows.</p></div>
+
+                </div>
+
+            </Card>
+
+        </div>}
 
         {inviting && chosen && <Invite me={me} business={chosen} close={() => setInviting(false)} done={() => void accounts.reload()} />}
         {removing && <Dialog title={`Borrar a ${removing.email}`} onClose={() => setRemoving(null)} busy={busy} footer={<><button className="btn quiet" onClick={() => setRemoving(null)}>Cancelar</button><button className="btn primary" disabled={busy} onClick={() => void submit(async () => { await api.removeOwner(me, removing.id); setRemoving(null); toast('Cuenta borrada'); void accounts.reload(); })}>Borrar cuenta</button></>}><p>Dejará de entrar a Culinary Dueño y se cierran sus sesiones. Para volver necesita una invitación nueva, con contraseña y autenticador nuevos. Esta acción se firma con la llave de este equipo.</p>{error && <div className="error">{error}</div>}</Dialog>}
