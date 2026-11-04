@@ -1,6 +1,9 @@
 ﻿# Compila el instalador de Windows (NSIS) con Rust y MSVC locales. Reutiliza por defecto la caja de herramientas
 # de MesaNexoNativo (.tools: cargo, rustup, SDK de Windows y encabezados de MSVC).
-param([string]$Tools=(Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'MesaNexoNativo/.tools'))
+# -Signing: carpeta de las llaves; por defecto %USERPROFILE%\.culinary-firma, o la del Escritorio si sólo existe esa.
+param([string]$Tools=(Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'MesaNexoNativo/.tools'),[string]$Signing='')
+if(-not $Signing){$Signing=@((Join-Path $env:USERPROFILE '.culinary-firma'),(Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) '.culinary-firma')) | Where-Object {Test-Path $_} | Select-Object -First 1}
+if(-not $Signing){throw 'No encuentro la carpeta .culinary-firma; indícala con -Signing.'}
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 if(Test-Path (Join-Path $Tools 'cargo/bin/cargo.exe')){$env:CARGO_HOME=Join-Path $Tools 'cargo';$env:RUSTUP_HOME=Join-Path $Tools 'rustup';$env:PATH="$env:CARGO_HOME\bin;$env:PATH"}
@@ -21,7 +24,7 @@ try{
     if(-not(Test-Path 'node_modules')){& npm.cmd ci --no-audit --no-fund;if($LASTEXITCODE){throw 'No se pudieron instalar las dependencias.'}}
     # Firma con las llaves de Culinary (MesaNexoNativo/tools/New-SigningKeys.ps1).
     $config=Join-Path $root 'src-tauri/target/firma.json'
-    $sign=@{bundle=@{windows=@{signCommand=@{cmd='powershell';args=@('-NoProfile','-ExecutionPolicy','Bypass','-File',(Join-Path (Split-Path $root -Parent) 'MesaNexoNativo/tools/Sign-Package.ps1'),'%1')}}}} | ConvertTo-Json -Depth 6
+    $sign=@{bundle=@{windows=@{signCommand=@{cmd='powershell';args=@('-NoProfile','-ExecutionPolicy','Bypass','-File',(Join-Path (Split-Path $root -Parent) 'MesaNexoNativo/tools/Sign-Package.ps1'),'-Directory',$Signing,'%1')}}}} | ConvertTo-Json -Depth 6
     [IO.File]::WriteAllText($config,$sign)
     & npm.cmd run tauri -- build --config $config
     if($LASTEXITCODE){throw 'Falló la compilación de Tauri.'}
