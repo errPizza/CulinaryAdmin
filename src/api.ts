@@ -9,8 +9,8 @@ export type License = {
     binding: { kind: 'tpm' | 'fingerprint'; keyAlg: string } | null; centralCertificateSha256: string | null;
 
 };
-export type Message = { id: string; author: 'branch' | 'admin'; adminId: string | null; body: string; createdAt: string };
-export type Ticket = { id: string; licenseId: string; customer?: string; branchName?: string; siteId?: string; subject: string; status: 'open' | 'answered' | 'closed'; createdAt: string; updatedAt: string; messages?: Message[] };
+export type Message = { id: string; author: 'branch' | 'admin' | 'owner'; adminId: string | null; body: string; createdAt: string };
+export type Ticket = { id: string; licenseId: string; customer?: string; branchName?: string; siteId?: string; subject: string; status: 'open' | 'answered' | 'closed'; createdAt: string; updatedAt: string; messages?: Message[]; ownerEmail?: string | null };
 export type Fault = { id: string; licenseId: string; customer: string; branchName: string; siteId: string; source: string; severity: 'error' | 'critical'; what: string; affected: string; detail: string; context: Record<string, string>; version: string; platform: string; occurrences: number; firstAt: string; lastAt: string; status: 'open' | 'resolved'; resolvedAt: string | null; resolvedBy: string | null };
 export type Release = { id: string; version: string; platform: string; filename: string; notes: string; status: 'uploading' | 'signing' | 'ready'; bytes: number | null; sha512: string | null; createdAt: string };
 export type Publication = { id: string; releaseId: string; target: 'all' | { licenseIds: string[] }; createdAt: string; withdrawnAt: string | null };
