@@ -148,6 +148,10 @@ test('creating a license shows the ID and activation code once', async ({ page }
     await dialog.getByLabel('Cliente', { exact: true }).fill('Tortas El Güero');
     await dialog.getByLabel('Sucursal', { exact: true }).fill('Iztapalapa');
     await dialog.getByLabel(/Identidad de la sucursal/).fill('guero-izt');
+    await dialog.getByLabel('RFC').fill('eku9003173c9');
+    await dialog.getByLabel('Código postal fiscal').fill('42501');
+    await dialog.getByLabel(/Razón social/).fill('escuela kemper urgate');
+    await dialog.getByRole('combobox', { name: 'Régimen fiscal' }).selectOption('601');
     await dialog.getByRole('button', { name: 'Combo Delivery Pro' }).click();
     await expect(dialog.getByRole('combobox', { name: 'Nivel' })).toHaveValue('pro');
     await expect(dialog.getByLabel('Delivery Hub')).toBeChecked();
@@ -162,6 +166,7 @@ test('creating a license shows the ID and activation code once', async ({ page }
     await expect(issued.getByText('11111111-2222-4333-8444-555555555555')).toBeVisible();
     const sent = calls.find(c => c.method === 'POST' && c.path === '/admin/v1/licenses')!.body;
     expect(sent).toMatchObject({ siteId: 'guero-izt', plan: 'trial', tier: 'pro', addons: ['deliveryHub', 'webOrdering'], trialDays: 21, limits: { maxUsers: 15, maxTables: 30 } });
+    expect(sent.fiscal).toEqual({ rfc: 'EKU9003173C9', name: 'ESCUELA KEMPER URGATE', postalCode: '42501', regime: '601' });
     expect(sent.limits.maxTerminals).toBeUndefined();
     expect(sent.features).toContain('promotions');
     await page.screenshot({ path: `${shots}/license-issued-1440.png` });
