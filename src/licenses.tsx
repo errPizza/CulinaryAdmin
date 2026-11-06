@@ -97,6 +97,7 @@ function LicenseDetail({ license: l, money, prices, close, changed, issued, dele
 
         <section><dl className="facts">
 
+            <dt>Datos fiscales</dt><dd>{l.fiscal ? <>{l.fiscal.rfc} · {l.fiscal.name}<div className="cell-sub">Régimen {l.fiscal.regime} · C.P. {l.fiscal.postalCode}</div></> : <span style={{ color: 'var(--red-ink)' }}>Incompletos: captúralos antes de activar o liberar el equipo</span>}</dd>
             <dt>Plan</dt><dd><span className={'tag ' + l.tier}>{api.TIERS[l.tier].label}</span> {planLine(l)}</dd>
             <dt>Deja al mes</dt><dd>{money?.monthly ? pesos(money.monthly) : '—'}</dd>
             <dt>Último cobro</dt><dd>{money?.lastCharge ? `${pesos(money.lastCharge.amount)} · ${day(money.lastCharge.at)}` : 'Sin cobros registrados'}</dd>
@@ -151,7 +152,7 @@ function Issued({ license, activationCode, title, close }: { license: License; a
 
 function LicenseForm({ license, prices, close, saved }: { license?: License; prices: Prices | null; close: () => void; saved: (r: { license: License; activationCode?: string }) => void }) {
 
-    const [f, setF] = useState({ customer: license?.customer ?? '', branchName: license?.branchName ?? '', siteId: license?.siteId ?? '', tenantId: license?.tenantId ?? '', plan: license?.plan ?? 'trial' as Plan, tier: license?.tier ?? 'lite' as Tier, addons: license?.addons ?? [] as Addon[], trialDays: license?.trialDays ?? 14, features: license?.features ?? ['printing'], maxUsers: license?.limits.maxUsers ?? 15, maxTables: license?.limits.maxTables ?? 30, maxTerminals: license && license.limits.maxTerminals !== api.TIERS[license.tier].terminals ? String(license.limits.maxTerminals) : '', expiresAt: '' });
+    const [f, setF] = useState({ customer: license?.customer ?? '', branchName: license?.branchName ?? '', siteId: license?.siteId ?? '', tenantId: license?.tenantId ?? '', plan: license?.plan ?? 'trial' as Plan, tier: license?.tier ?? 'lite' as Tier, addons: license?.addons ?? [] as Addon[], trialDays: license?.trialDays ?? 14, features: license?.features ?? ['printing'], maxUsers: license?.limits.maxUsers ?? 15, maxTables: license?.limits.maxTables ?? 30, maxTerminals: license && license.limits.maxTerminals !== api.TIERS[license.tier].terminals ? String(license.limits.maxTerminals) : '', expiresAt: '', rfc: license?.fiscal?.rfc ?? '', fiscalName: license?.fiscal?.name ?? '', postalCode: license?.fiscal?.postalCode ?? '', regime: license?.fiscal?.regime ?? '' });
     const combo = api.COMBOS.find(c => c.tier === f.tier && c.addons.length === f.addons.length && c.addons.every(a => f.addons.includes(a)))?.id ?? '';
     const [charge, setCharge] = useState<number | null>(null);
     const { busy, error, submit } = useSubmit(), toast = useToast();
@@ -165,11 +166,15 @@ function LicenseForm({ license, prices, close, saved }: { license?: License; pri
 
         const base = { customer: f.customer.trim(), branchName: f.branchName.trim(), plan: f.plan, tier: f.tier, addons: f.addons, features: f.features, limits: { maxUsers: Number(f.maxUsers), maxTables: Number(f.maxTables), ...(f.maxTerminals ? { maxTerminals: Number(f.maxTerminals) } : {}) }, ...(f.plan === 'trial' ? { trialDays: Number(f.trialDays) } : {}), ...(charges && charge !== null ? { charge } : {}) };
         
-        if (!license) { const input: LicenseInput = { ...base, siteId: f.siteId.trim(), ...(f.tenantId.trim() ? { tenantId: f.tenantId.trim() } : {}) }; saved(await api.createLicense(input)); return; }
+        const fiscal = { rfc: f.rfc.trim().toUpperCase(), name: f.fiscalName.trim(), postalCode: f.postalCode.trim(), regime: f.regime };
+
+        if (!license) { const input: LicenseInput = { ...base, fiscal, siteId: f.siteId.trim(), ...(f.tenantId.trim() ? { tenantId: f.tenantId.trim() } : {}) }; saved(await api.createLicense(input)); return; }
        
         const patch: Parameters<typeof api.updateLicense>[1] = { ...base };
 
         if (f.siteId.trim() !== license.siteId) patch.siteId = f.siteId.trim();
+        // A license from before the tax data was required can still be edited without it; once captured, all four go together.
+        if (fiscal.rfc || fiscal.name || fiscal.postalCode || fiscal.regime) patch.fiscal = fiscal;
 
         if (license.plan === f.plan && license.plan === 'trial' && license.status !== 'pending') delete patch.trialDays;
         if (f.expiresAt) patch.expiresAt = new Date(f.expiresAt + 'T23:59:59').toISOString();
@@ -190,6 +195,14 @@ function LicenseForm({ license, prices, close, saved }: { license?: License; pri
             {!license && <div className="row"><label className="field">Identidad de la sucursal (siteId)<small>La que tiene su servidor de CulinaryOS</small><input className="input num" required pattern="[a-z0-9\-]{1,32}" {...text('siteId')} spellCheck={false} /></label><label className="field">Empresa (tenantId)<small>Opcional; agrupa sus sucursales</small><input className="input num" pattern="[a-z0-9\-]{1,64}" {...text('tenantId')} spellCheck={false} /></label></div>}
             {license && <label className="field">Identidad de la sucursal (siteId)<small>{license.binding ? 'Ligada a un equipo: libera el equipo para cambiarla' : 'La que muestra su servidor de CulinaryOS al activar'}</small><input className="input num" required pattern="[a-z0-9\-]{1,32}" {...text('siteId')} disabled={!!license.binding} spellCheck={false} /></label>}
            
+            <fieldset style={{ border: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+                <legend className="field" style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 6 }}>Datos fiscales del negocio<small style={{ fontWeight: 400 }}>Tal como dice su Constancia de Situación Fiscal. Sin ellos no se activa la licencia ni se factura.</small></legend>
+                <div className="row"><label className="field">RFC<input className="input num" required={!license || license.fiscalComplete} maxLength={13} pattern="[A-Za-zÑñ&]{3,4}[0-9]{6}[A-Za-z0-9]{3}" value={f.rfc} onChange={e => setF({ ...f, rfc: e.target.value.toUpperCase() })} spellCheck={false} /></label><label className="field">Código postal fiscal<input className="input num" required={!license || license.fiscalComplete} inputMode="numeric" pattern="[0-9]{5}" maxLength={5} value={f.postalCode} onChange={e => setF({ ...f, postalCode: e.target.value })} /></label></div>
+                <label className="field">Razón social<small>En mayúsculas y sin el régimen societario: «ESCUELA KEMPER URGATE», no «… S.A. de C.V.»</small><input className="input" required={!license || license.fiscalComplete} maxLength={254} value={f.fiscalName} onChange={e => setF({ ...f, fiscalName: e.target.value.toUpperCase() })} /></label>
+                <label className="field">Régimen fiscal<select className="input" required={!license || license.fiscalComplete} value={f.regime} onChange={e => setF({ ...f, regime: e.target.value })}><option value="">Elige el régimen…</option>{Object.entries(api.REGIMES).map(([k, v]) => <option key={k} value={k}>{k} · {v}</option>)}</select></label>
+
+            </fieldset>
             <div className="field" style={{ fontSize: 12.5, fontWeight: 600 }}>Combo<div className="seg" role="group" aria-label="Combo"><button type="button" aria-pressed={!combo} onClick={() => setF({ ...f, addons: [] })}>Sin combo</button>{api.COMBOS.map(c => <button type="button" key={c.id} aria-pressed={combo === c.id} onClick={() => setF({ ...f, tier: c.tier, addons: c.addons })}>{c.label}</button>)}</div></div>
             <div className="row"><label className="field">Nivel<select className="input" value={f.tier} onChange={e => setF({ ...f, tier: e.target.value as Tier })}>{Object.entries(api.TIERS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></label>
              

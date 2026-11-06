@@ -7,7 +7,17 @@ export type License = {
     revision: number; status: LicenseStatus; createdAt: string; activatedAt: string | null; expiresAt: string | null;
     validatedAt: string | null; revokedAt: string | null; revokeReason: string | null;
     binding: { kind: 'tpm' | 'fingerprint'; keyAlg: string } | null; centralCertificateSha256: string | null;
+    // As the business's Constancia de Situación Fiscal states it; null on a license created before it was required.
+    fiscal: Fiscal | null; fiscalComplete: boolean;
 
+};
+export type Fiscal = { rfc: string; name: string; postalCode: string; regime: string };
+// c_RegimenFiscal under which a business can issue its sales invoices; the server checks it applies to the RFC's kind of person.
+export const REGIMES: Record<string, string> = {
+    '601': 'General de Ley Personas Morales', '603': 'Personas Morales con Fines no Lucrativos', '606': 'Arrendamiento', '607': 'Enajenación o Adquisición de Bienes',
+    '608': 'Demás ingresos', '610': 'Residentes en el Extranjero sin Establecimiento Permanente', '612': 'Personas Físicas con Actividades Empresariales y Profesionales',
+    '620': 'Sociedades Cooperativas de Producción', '621': 'Incorporación Fiscal', '622': 'Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras',
+    '623': 'Opcional para Grupos de Sociedades', '624': 'Coordinados', '625': 'Actividades Empresariales por Plataformas Tecnológicas', '626': 'Régimen Simplificado de Confianza'
 };
 export type Message = { id: string; author: 'branch' | 'admin' | 'owner'; adminId: string | null; body: string; createdAt: string };
 export type Ticket = { id: string; licenseId: string; customer?: string; branchName?: string; siteId?: string; subject: string; status: 'open' | 'answered' | 'closed'; createdAt: string; updatedAt: string; messages?: Message[]; ownerEmail?: string | null };
@@ -160,7 +170,7 @@ export const removeAdmin = (username: string, id: string) => signed<{ ok: true }
 export const rootKey = () => send<{ kid: string; alg: string; publicKey: string; spki: string; pem: string; licenseIntermediate?: { kid: string; generation: number; notBefore: string; expiresAt: string } | null }>('GET', '/admin/v1/root-key');
 export const audit = (before?: string) => send<{ entries: AuditEntry[] }>('GET', '/admin/v1/audit' + (before ? '?before=' + encodeURIComponent(before) : ''));
 
-export type LicenseInput = { customer: string; branchName: string; siteId: string; tenantId?: string; plan: Plan; tier: Tier; addons: Addon[]; trialDays?: number; features: string[]; limits: { maxUsers: number; maxTables: number; maxTerminals?: number }; charge?: number };
+export type LicenseInput = { fiscal: Fiscal; customer: string; branchName: string; siteId: string; tenantId?: string; plan: Plan; tier: Tier; addons: Addon[]; trialDays?: number; features: string[]; limits: { maxUsers: number; maxTables: number; maxTerminals?: number }; charge?: number };
 export const licenses = () => send<{ licenses: License[] }>('GET', '/admin/v1/licenses');
 export const createLicense = (input: LicenseInput) => send<{ license: License; activationCode: string }>('POST', '/admin/v1/licenses', input);
 export const updateLicense = (id: string, patch: Partial<Omit<LicenseInput, 'tenantId'>> & { expiresAt?: string }) => send<{ license: License }>('PATCH', '/admin/v1/licenses/' + id, patch);
