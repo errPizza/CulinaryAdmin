@@ -1,7 +1,8 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { BadgeCheck, CircleX, ClockAlert, Cpu, Hourglass, Pencil, Plus, RefreshCw, ShieldOff, Trash2, X } from 'lucide-react';
 import * as api from './api';
-import type { Addon, License, LicenseInput, Plan, Prices, Tier } from './api';
+import type { Addon, Integration, License, LicenseInput, Plan, Prices, Tier } from './api';
+const ALL_INTEGRATIONS = Object.keys(api.INTEGRATIONS) as Integration[];
 import { Money } from './revenue';
 import { expiryLabel, licenseState } from './summary';
 import { Card, Dialog, Empty, Kpi, Masthead, Secret, ShellContext, SkeletonRows, State, buckets, day, daysLeft, intent, needsRenewal, pesos, useLoad, useSubmit, useToast } from './ui';
@@ -109,6 +110,7 @@ function LicenseDetail({ license: l, money, prices, close, changed, issued, dele
         </dl></section>
 
         <section><h3>Complementos</h3><div className="chips">{l.addons.length ? l.addons.map(a => <span className="chip" key={a}>{api.ADDONS[a] ?? a}</span>) : <span className="cell-sub">Sin complementos</span>}</div></section>
+        <section><h3>Integraciones</h3><div className="chips">{l.integrations == null ? <span className="cell-sub">Todas · licencia anterior a la lista</span> : l.integrations.length ? l.integrations.map(i => <span className="chip" key={i}>{api.INTEGRATIONS[i] ?? i}</span>) : <span className="cell-sub">Ninguna</span>}</div></section>
         <section><h3>Funciones</h3><div className="chips">{l.features.length ? l.features.map(f => <span className="chip" key={f}>{api.FEATURES[f] ?? f}</span>) : <span className="cell-sub">Solo la operación base</span>}</div></section>
 
         <section><div className="buttons">
@@ -152,7 +154,7 @@ function Issued({ license, activationCode, title, close }: { license: License; a
 
 function LicenseForm({ license, prices, close, saved }: { license?: License; prices: Prices | null; close: () => void; saved: (r: { license: License; activationCode?: string }) => void }) {
 
-    const [f, setF] = useState({ customer: license?.customer ?? '', branchName: license?.branchName ?? '', siteId: license?.siteId ?? '', tenantId: license?.tenantId ?? '', plan: license?.plan ?? 'trial' as Plan, tier: license?.tier ?? 'lite' as Tier, addons: license?.addons ?? [] as Addon[], trialDays: license?.trialDays ?? 14, features: license?.features ?? ['printing'], maxUsers: license?.limits.maxUsers ?? 15, maxTables: license?.limits.maxTables ?? 30, maxTerminals: license && license.limits.maxTerminals !== api.TIERS[license.tier].terminals ? String(license.limits.maxTerminals) : '', expiresAt: '', rfc: license?.fiscal?.rfc ?? '', fiscalName: license?.fiscal?.name ?? '', postalCode: license?.fiscal?.postalCode ?? '', regime: license?.fiscal?.regime ?? '' });
+    const [f, setF] = useState({ customer: license?.customer ?? '', branchName: license?.branchName ?? '', siteId: license?.siteId ?? '', tenantId: license?.tenantId ?? '', plan: license?.plan ?? 'trial' as Plan, tier: license?.tier ?? 'lite' as Tier, addons: license?.addons ?? [] as Addon[], integrations: license ? license.integrations ?? ALL_INTEGRATIONS : ['pac', 'terminal', 'printer'] as Integration[], trialDays: license?.trialDays ?? 14, features: license?.features ?? ['printing'], maxUsers: license?.limits.maxUsers ?? 15, maxTables: license?.limits.maxTables ?? 30, maxTerminals: license && license.limits.maxTerminals !== api.TIERS[license.tier].terminals ? String(license.limits.maxTerminals) : '', expiresAt: '', rfc: license?.fiscal?.rfc ?? '', fiscalName: license?.fiscal?.name ?? '', postalCode: license?.fiscal?.postalCode ?? '', regime: license?.fiscal?.regime ?? '' });
     const combo = api.COMBOS.find(c => c.tier === f.tier && c.addons.length === f.addons.length && c.addons.every(a => f.addons.includes(a)))?.id ?? '';
     const [charge, setCharge] = useState<number | null>(null);
     const { busy, error, submit } = useSubmit(), toast = useToast();
@@ -164,7 +166,7 @@ function LicenseForm({ license, prices, close, saved }: { license?: License; pri
    
     async function save() {
 
-        const base = { customer: f.customer.trim(), branchName: f.branchName.trim(), plan: f.plan, tier: f.tier, addons: f.addons, features: f.features, limits: { maxUsers: Number(f.maxUsers), maxTables: Number(f.maxTables), ...(f.maxTerminals ? { maxTerminals: Number(f.maxTerminals) } : {}) }, ...(f.plan === 'trial' ? { trialDays: Number(f.trialDays) } : {}), ...(charges && charge !== null ? { charge } : {}) };
+        const base = { customer: f.customer.trim(), branchName: f.branchName.trim(), plan: f.plan, tier: f.tier, addons: f.addons, integrations: f.integrations, features: f.features, limits: { maxUsers: Number(f.maxUsers), maxTables: Number(f.maxTables), ...(f.maxTerminals ? { maxTerminals: Number(f.maxTerminals) } : {}) }, ...(f.plan === 'trial' ? { trialDays: Number(f.trialDays) } : {}), ...(charges && charge !== null ? { charge } : {}) };
         
         const fiscal = { rfc: f.rfc.trim().toUpperCase(), name: f.fiscalName.trim(), postalCode: f.postalCode.trim(), regime: f.regime };
 
@@ -218,6 +220,9 @@ function LicenseForm({ license, prices, close, saved }: { license?: License; pri
             {charges && <Charge amount={charge} setAmount={setCharge} list={list} />}
             
             <fieldset style={{ border: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}><legend className="field" style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 6 }}>Complementos</legend><div className="checks">{Object.entries(api.ADDONS).map(([k, v]) => <label className="check" key={k}><input type="checkbox" checked={f.addons.includes(k as Addon)} onChange={e => setF({ ...f, addons: e.target.checked ? [...f.addons, k as Addon] : f.addons.filter(x => x !== k) })} />{v}</label>)}</div></fieldset>
+            <fieldset style={{ border: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}><legend className="field" style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 6 }}>Integraciones incluidas<small style={{ fontWeight: 400 }}>Las que el gerente podrá activar en la sucursal. Las plataformas de reparto van con Delivery Hub.</small></legend>
+                <div className="seg" role="group" aria-label="Atajos de integraciones"><button type="button" aria-pressed={f.integrations.length === ALL_INTEGRATIONS.length} onClick={() => setF({ ...f, integrations: ALL_INTEGRATIONS })}>Todas</button><button type="button" aria-pressed={f.integrations.length === 0} onClick={() => setF({ ...f, integrations: [] })}>Ninguna</button></div>
+                <div className="checks">{Object.entries(api.INTEGRATIONS).map(([k, v]) => <label className="check" key={k}><input type="checkbox" checked={f.integrations.includes(k as Integration)} onChange={e => setF({ ...f, integrations: e.target.checked ? [...f.integrations, k as Integration] : f.integrations.filter(x => x !== k) })} />{v}</label>)}</div></fieldset>
             <fieldset style={{ border: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}><legend className="field" style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 6 }}>Funciones contratadas</legend><div className="checks">{Object.entries(api.FEATURES).map(([k, v]) => <label className="check" key={k}><input type="checkbox" checked={f.features.includes(k)} onChange={e => setF({ ...f, features: e.target.checked ? [...f.features, k] : f.features.filter(x => x !== k) })} />{v}</label>)}</div></fieldset>
             <div className="row"><label className="field">Usuarios máximos<input className="input num" type="number" min={1} max={10000} required value={f.maxUsers} onChange={e => setF({ ...f, maxUsers: Number(e.target.value) })} /></label><label className="field">Mesas máximas<input className="input num" type="number" min={1} max={10000} required value={f.maxTables} onChange={e => setF({ ...f, maxTables: Number(e.target.value) })} /></label></div>
            

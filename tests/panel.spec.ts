@@ -159,6 +159,10 @@ test('creating a license shows the ID and activation code once', async ({ page }
     await dialog.getByRole('combobox', { name: 'Periodo' }).selectOption('trial');
     await dialog.getByLabel('Días de prueba').fill('21');
     await dialog.getByLabel('Promociones').check();
+    await expect(dialog.getByLabel('Facturación CFDI')).toBeChecked();
+    await dialog.getByRole('button', { name: 'Ninguna' }).click();
+    await dialog.getByLabel('Mapas').check();
+    await dialog.getByLabel('Terminal bancaria').check();
     await page.screenshot({ path: `${shots}/license-create-1440.png` });
     await page.getByRole('button', { name: 'Crear licencia' }).click();
     const issued = page.getByRole('dialog', { name: 'Licencia creada' });
@@ -169,6 +173,7 @@ test('creating a license shows the ID and activation code once', async ({ page }
     expect(sent.fiscal).toEqual({ rfc: 'EKU9003173C9', name: 'ESCUELA KEMPER URGATE', postalCode: '42501', regime: '601' });
     expect(sent.limits.maxTerminals).toBeUndefined();
     expect(sent.features).toContain('promotions');
+    expect(sent.integrations).toEqual(['maps', 'terminal']);
     await page.screenshot({ path: `${shots}/license-issued-1440.png` });
 
 });

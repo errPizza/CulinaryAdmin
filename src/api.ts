@@ -3,7 +3,7 @@ export type LicenseStatus = 'pending' | 'active' | 'expired' | 'revoked';
 export type License = {
 
     id: string; tenantId: string; siteId: string; customer: string; branchName: string;
-    plan: Plan; tier: Tier; addons: Addon[]; trialDays: number | null; features: string[]; limits: { maxUsers: number; maxTables: number; maxTerminals: number };
+    plan: Plan; tier: Tier; addons: Addon[]; integrations: Integration[] | null; trialDays: number | null; features: string[]; limits: { maxUsers: number; maxTables: number; maxTerminals: number };
     revision: number; status: LicenseStatus; createdAt: string; activatedAt: string | null; expiresAt: string | null;
     validatedAt: string | null; revokedAt: string | null; revokeReason: string | null;
     binding: { kind: 'tpm' | 'fingerprint'; keyAlg: string } | null; centralCertificateSha256: string | null;
@@ -31,6 +31,10 @@ export const FEATURES: Record<string, string> = { reservations: 'Reservaciones',
 export const PLANS: Record<Plan, string> = { trial: 'Prueba', monthly: 'Mensual', annual: 'Anual', permanent: 'De por vida' };
 export type Tier = 'lite' | 'pro';
 export type Addon = 'mobileOrdering' | 'deliveryHub' | 'webOrdering';
+// Third-party connections the branch may switch on (delivery platforms stay under Delivery Hub). Keep in step with
+// INTEGRATIONS in CulinaryServer src/catalog.ts. A license without the list (null) predates it and keeps all of them.
+export type Integration = 'pac' | 'terminal' | 'onlinepay' | 'messaging' | 'pms' | 'maps' | 'callerid' | 'printer';
+export const INTEGRATIONS: Record<Integration, string> = { pac: 'Facturación CFDI', terminal: 'Terminal bancaria', onlinepay: 'Pagos en línea', messaging: 'WhatsApp y correo', pms: 'Hotel (PMS)', maps: 'Mapas', callerid: 'Identificador de llamadas', printer: 'Impresora y cajón' };
 export const TIERS: Record<Tier, { label: string; terminals: number }> = { lite: { label: 'Lite', terminals: 2 }, pro: { label: 'Pro', terminals: 10 } };
 export const ADDONS: Record<Addon, string> = { mobileOrdering: 'Comanderos móviles', deliveryHub: 'Delivery Hub', webOrdering: 'Web propia de pedidos' };
 // Keep in step with COMBOS in CulinaryServer src/catalog.ts: the server prices a monthly license that matches one.
@@ -170,7 +174,7 @@ export const removeAdmin = (username: string, id: string) => signed<{ ok: true }
 export const rootKey = () => send<{ kid: string; alg: string; publicKey: string; spki: string; pem: string; licenseIntermediate?: { kid: string; generation: number; notBefore: string; expiresAt: string } | null }>('GET', '/admin/v1/root-key');
 export const audit = (before?: string) => send<{ entries: AuditEntry[] }>('GET', '/admin/v1/audit' + (before ? '?before=' + encodeURIComponent(before) : ''));
 
-export type LicenseInput = { fiscal: Fiscal; customer: string; branchName: string; siteId: string; tenantId?: string; plan: Plan; tier: Tier; addons: Addon[]; trialDays?: number; features: string[]; limits: { maxUsers: number; maxTables: number; maxTerminals?: number }; charge?: number };
+export type LicenseInput = { fiscal: Fiscal; customer: string; branchName: string; siteId: string; tenantId?: string; plan: Plan; tier: Tier; addons: Addon[]; integrations: Integration[]; trialDays?: number; features: string[]; limits: { maxUsers: number; maxTables: number; maxTerminals?: number }; charge?: number };
 export const licenses = () => send<{ licenses: License[] }>('GET', '/admin/v1/licenses');
 export const createLicense = (input: LicenseInput) => send<{ license: License; activationCode: string }>('POST', '/admin/v1/licenses', input);
 export const updateLicense = (id: string, patch: Partial<Omit<LicenseInput, 'tenantId'>> & { expiresAt?: string }) => send<{ license: License }>('PATCH', '/admin/v1/licenses/' + id, patch);
